@@ -235,7 +235,7 @@
     </main>
 
     <script>
-        const apiKey = 'AIzaSyDBiSrQnCDLczLGdAHm1UWtkN4YcnEYIA4';
+        const apiKey = 'AIzaSyBlcpJatJNdvZN7ehsoltj2rVl-39VyZkk';
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzXfgwH6gvspGHAMElyyDg-Rpe4xx9BLLLhgvN4oqpYiWcDsjt6r9be5WCy6FjK3k-Y/exec';
         const URL_LOGO_DEFAULT = 'https://i.postimg.cc/7YHzV6B2/photo-2026-03-04-20-01-20.png';
         const URL_LOGO_SECOND = 'https://i.postimg.cc/8C2XY3sc/Ts25-Program-Transformasi-Sekolah-2025-Logo-Vector-svg.png';
@@ -346,7 +346,7 @@
         async function prosesKeAI(base64, type) {
             startLoading();
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ contents: [{ parts: [{ text: promptSystem }, { inlineData: { mimeType: type, data: base64.split(',')[1] } }] }] })
                 });

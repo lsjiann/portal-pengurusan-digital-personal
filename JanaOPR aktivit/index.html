@@ -1,0 +1,1172 @@
+<!-- File: ai_smart_opr_v12_1.html -->
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI SMART OPR V12.1 - Auto Fallback Edition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.4/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    window.FirebaseLib = { initializeApp, getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, query, orderBy, setDoc, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged };
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #eef2ff 0%, #f1f5f9 50%, #ecfeff 100%);
+      margin: 0; padding: 0;
+      min-height: 100vh;
+    }
+
+    .font-display { font-family: 'Space Grotesk', sans-serif; }
+
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #6366f1, #8b5cf6);
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #4f46e5, #7c3aed); }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .btn-gradient-primary {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+      transition: all 0.25s ease;
+    }
+    .btn-gradient-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+    }
+    .btn-gradient-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+      transition: all 0.25s ease;
+    }
+    .btn-gradient-success:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45); }
+
+    .btn-gradient-word {
+      background: linear-gradient(135deg, #2B579A 0%, #1e3a6f 100%);
+      box-shadow: 0 4px 14px rgba(43, 87, 154, 0.35);
+      transition: all 0.25s ease;
+    }
+    .btn-gradient-word:hover { transform: translateY(-1px); }
+
+    .btn-gradient-cloud {
+      background: linear-gradient(135deg, #4285F4 0%, #1a73e8 100%);
+      box-shadow: 0 4px 14px rgba(66, 133, 244, 0.35);
+      transition: all 0.25s ease;
+    }
+    .btn-gradient-cloud:hover { transform: translateY(-1px); }
+
+    .btn-gradient-archive {
+      background: linear-gradient(135deg, #6366F1 0%, #4f46e5 100%);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+      transition: all 0.25s ease;
+    }
+    .btn-gradient-archive:hover { transform: translateY(-1px); }
+
+    .btn-gradient-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+      transition: all 0.25s ease;
+    }
+    .btn-gradient-danger:hover { transform: translateY(-1px); }
+
+    .input-modern {
+      transition: all 0.2s ease;
+      border: 1.5px solid #e2e8f0;
+      background: #ffffff;
+    }
+    .input-modern:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+    }
+    .input-modern:hover:not(:focus) { border-color: #cbd5e1; }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); }
+    }
+    .pulse-glow { animation: pulseGlow 1.8s infinite; }
+
+    .method-card {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 2px solid transparent;
+    }
+    .method-card:hover { transform: translateY(-2px); }
+    .method-active {
+      border-color: #6366f1 !important;
+      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%) !important;
+      color: #4338ca !important;
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.2);
+    }
+
+    .toast-success {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      color: #065f46;
+      border-left: 4px solid #10b981;
+    }
+    .toast-error {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      color: #991b1b;
+      border-left: 4px solid #ef4444;
+    }
+    .toast-info {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      color: #1e40af;
+      border-left: 4px solid #3b82f6;
+    }
+
+    /* Model chain visualizer */
+    .chain-node {
+      transition: all 0.3s ease;
+    }
+    .chain-node.pending {
+      background: #f1f5f9;
+      color: #94a3b8;
+      border: 1.5px solid #e2e8f0;
+    }
+    .chain-node.trying {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #92400e;
+      border: 1.5px solid #f59e0b;
+      animation: pulseGlow 1.2s infinite;
+    }
+    .chain-node.success {
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      color: #065f46;
+      border: 1.5px solid #10b981;
+    }
+    .chain-node.failed {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      color: #991b1b;
+      border: 1.5px solid #ef4444;
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+    .chain-arrow {
+      color: #cbd5e1;
+      font-weight: 900;
+    }
+
+    .paper-container {
+      width: 210mm; height: 297mm; min-height: 297mm; max-height: 297mm;
+      background: white; overflow: hidden; position: relative; margin: 0 auto;
+      display: flex; flex-direction: column; box-sizing: border-box; padding: 0;
+      box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+    }
+
+    #report-element { width: 210mm; height: 297mm; padding: 8mm; box-sizing: border-box; }
+
+    @media print {
+      @page { size: A4; margin: 0 !important; }
+      html, body { height: 297mm; width: 210mm; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: white !important; }
+      aside, .print-hide, .modal-backdrop { display: none !important; }
+      main { padding: 0 !important; margin: 0 !important; background: white !important; width: 210mm !important; height: 297mm !important; overflow: hidden !important; display: block !important; }
+      .paper-container { position: absolute !important; left: 0 !important; top: 0 !important; margin: 0 !important; padding: 0 !important; width: 210mm !important; height: 297mm !important; border: none !important; box-shadow: none !important; display: flex !important; overflow: hidden !important; border-radius: 0 !important; }
+    }
+
+    .wrap-text { white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; line-height: 1.35; }
+    .report-content-text {
+      font-size: clamp(8px, 1.15vw, 11px);
+      font-weight: 400;
+      text-transform: none !important;
+      display: block;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in-up { animation: fadeInUp 0.3s ease-out; }
+
+    .badge-ai {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: #78350f;
+      font-size: 8px; padding: 2px 6px; border-radius: 999px; font-weight: 800;
+    }
+
+    .badge-auto {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      font-size: 8px; padding: 2px 8px; border-radius: 999px; font-weight: 800;
+      display: inline-flex; align-items: center; gap: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    const apiKey = "AIzaSyDBiSrQnCDLczLGdAHm1UWtkN4YcnEYIA4";
+
+    // ============= MODEL FALLBACK CHAIN (AUTOMATIC - TERTIB TETAP) =============
+    const AI_MODELS = [
+      { id: 'gemini-2.5-flash',      label: '2.5 Flash',      tier: 1, desc: 'Default · Pantas & stabil' },
+      { id: 'gemini-2.5-pro',        label: '2.5 Pro',        tier: 2, desc: 'Fallback 1 · Analisis mendalam' },
+      { id: 'gemini-3.0-flash',      label: '3.0 Flash',      tier: 3, desc: 'Fallback 2 · Generasi terbaharu' },
+      { id: 'gemini-3.0-flash-lite', label: '3.0 Flash Lite', tier: 4, desc: 'Fallback 3 · Ringan & pantas' },
+      { id: 'gemini-pro',            label: 'Gemini Pro',     tier: 5, desc: 'Fallback 4 · Legasi stabil' }
+    ];
+
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzjwvu7ypa4bFIH1wYt0crEwUHNVkvarQWeQ8d4d2DI7TcXls0DwvtX2PitvB59Vr5rSQ/exec";
+
+    const URL_LOGO_LEFT = 'https://i.postimg.cc/7YHzV6B2/photo-2026-03-04-20-01-20.png';
+    const URL_LOGO_RIGHT = 'https://i.postimg.cc/8C2XY3sc/Ts25-Program-Transformasi-Sekolah-2025-Logo-Vector-svg.png';
+
+    const aspekMapping = {
+      '3.1 PENGURUSAN KURIKULUM': [
+        '3.1.1 KETETAPAN PELAKSANAAN KURIKULUM',
+        '3.1.2 PENGURUSAN MATA PELAJARAN',
+        '3.1.3 PENGURUSAN MASA INSTRUKSIONAL',
+        '3.1.4 PENGURUSAN PENILAIAN MURID'
+      ],
+      '3.2 PENGURUSAN KOKURIKULUM': [
+        '3.2.1 KETETAPAN PELAKSANAAN KOKURIKULUM',
+        '3.2.2 PENGURUSAN KELAB/PERSATUAN',
+        '3.2.3 PENGURUSAN BADAN BERUNIFORM',
+        '3.2.4 PENGURUSAN SUKAN/PERMAINAN',
+        '3.2.5 PENGURUSAN PROGRAM KECEMERLANGAN KOKURIKULUM',
+        '3.2.6 PENGURUSAN SUKAN UNTUK SEMUA',
+        '3.2.7 PENGURUSAN PENTAKSIRAN KOKURIKULUM'
+      ],
+      '3.3 PENGURUSAN HAL EHWAL MURID': [
+        '3.3.1 KETETAPAN PELAKSANAAN HAL EHWAL MURID',
+        '3.3.2 PENGURUSAN DISIPLIN MURID',
+        '3.3.3 PENGURUSAN KESELAMATAN MURID',
+        '3.3.4 PENGURUSAN KESIHATAN MURID',
+        '3.3.5 PENGURUSAN BANTUAN MURID',
+        '3.3.6 PENGURUSAN PERKHIDMATAN BIMBINGAN DAN KAUNSELING'
+      ],
+      '5. KEMENJADIAN MURID': [
+        '5.1.1 KEMENJADIAN MURID DALAM AKADEMIK',
+        '5.2.1 KEMENJADIAN MURID DALAM KOKURIKULUM',
+        '5.3.1 KEMENJADIAN SAHSIAH MURID'
+      ]
+    };
+
+    const globalTemplates = [
+      { id: 'T1', name: 'T1: Standard Layout' },
+      { id: 'T2', name: 'T2: Middle Split' },
+      { id: 'T3', name: 'T3: Large Mosaic' },
+      { id: 'T4', name: 'T4: Hero Grid' }
+    ];
+
+    const IconBrain = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"/></svg>;
+    const IconPaste = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>;
+    const IconUpload = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+    const IconManual = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>;
+    const IconTrash = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>;
+    const IconWord = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
+    const IconSparkles = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.91 5.81L21 12l-7.09 3.19L12 21l-1.91-5.81L3 12l7.09-3.19z"/></svg>;
+    const IconPrinter = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>;
+    const IconCloud = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>;
+    const IconArchive = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>;
+    const IconRefresh = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>;
+    const IconCheck = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
+    const IconX = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    const IconBolt = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+
+    // ========= UNIFIED HEADER =========
+    const UnifiedHeader = ({ data, colorClass = "text-blue-600", dark = false }) => (
+      <div className="flex flex-col items-center w-full pt-2 px-6 uppercase shrink-0">
+        <div className="flex items-center justify-between w-full gap-4 mb-1">
+          <img src={URL_LOGO_LEFT} className="w-14 h-14 object-contain" />
+          <div className="flex flex-col items-center flex-1 text-center text-slate-900">
+            <h2 className={`text-[26px] font-black tracking-tighter leading-none w-full ${dark ? 'text-white' : ''}`}>{data.schoolName || "SMK TINGGI KUCHING"}</h2>
+            <div className={`${dark ? 'bg-white text-black' : 'bg-blue-600 text-white'} text-[12px] font-black px-6 py-1 rounded-full mt-1 shrink-0`}>ONE PAGE REPORT</div>
+          </div>
+          <img src={URL_LOGO_RIGHT} className="w-14 h-14 object-contain" />
+        </div>
+        <h1 className={`text-[17px] font-black ${colorClass} text-center mt-1 leading-tight tracking-tight uppercase`}>{data.programName || "SILA MASUKKAN TAJUK"}</h1>
+        <div className="flex gap-3 mt-1.5">
+           <span className={`text-[9px] font-bold px-3 py-0.5 rounded border ${dark ? 'border-white/20 text-slate-200' : 'border-slate-200 text-slate-500'}`}>STANDARD SK@S: {data.accountability || "-"}</span>
+           <span className={`text-[9px] font-bold px-3 py-0.5 rounded border ${dark ? 'border-white/20 text-slate-200' : 'border-slate-200 text-slate-500'}`}>ASPEK SK@S: {data.mainTask || "-"}</span>
+        </div>
+      </div>
+    );
+
+    // ========= TEMPLATES =========
+    const TemplateT1 = ({ data, images }) => (
+      <div id="report-element" className="p-8 flex flex-col h-full bg-white text-slate-900 overflow-hidden uppercase w-full">
+        <UnifiedHeader data={data} />
+        <div className="grid grid-cols-2 gap-4 mt-4 shrink-0 h-[30%]">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="border-2 border-slate-100 shadow-md rounded-2xl overflow-hidden bg-slate-50 relative h-full">
+                {images[i] ? <img src={images[i]} className="w-full h-full object-cover" alt={`G${i+1}`} /> : <div className="w-full h-full flex items-center justify-center text-slate-200 text-[10px]">G{i+1}</div>}
+              </div>
+            ))}
+        </div>
+        <div className="grid grid-cols-4 gap-2 mt-4 shrink-0">
+            {[ {l:'Tarikh',v:data.date}, {l:'Masa',v:data.time}, {l:'Tempat',v:data.venue}, {l:'Sasaran',v:data.target} ].map((x, i) => (
+              <div key={i} className="bg-slate-50 border rounded-xl p-2 flex flex-col items-center min-w-0">
+                <span className="text-[10px] text-slate-400 block font-bold uppercase whitespace-nowrap">{x.l}</span>
+                <span className="text-[10px] font-normal uppercase text-center w-full whitespace-pre-wrap">{x.v || "-"}</span>
+              </div>
+            ))}
+        </div>
+        <div className="flex flex-1 mt-4 gap-3 overflow-hidden min-h-0">
+            <div className="flex-[45] flex flex-col gap-3">
+                <div className="h-[35%] bg-white p-3 border-l-4 border-blue-600 shadow-sm rounded-r-2xl border border-slate-100 overflow-hidden">
+                    <h4 className="text-blue-700 text-[10px] mb-1 font-black uppercase">AKTIVITI/PENGISIAN</h4>
+                    <div className="report-content-text">{data.activities}</div>
+                </div>
+                <div className="flex-1 bg-slate-50 p-4 rounded-2xl border border-slate-100 overflow-hidden">
+                    <h4 className="text-blue-600 text-[10px] mb-1 font-black uppercase">OBJEKTIF</h4>
+                    <div className="report-content-text wrap-text">{data.objectives}</div>
+                </div>
+            </div>
+            <div className="flex-[55] flex flex-col gap-3">
+                <div className="h-[45%] bg-white p-3 border-l-4 border-indigo-600 shadow-sm rounded-r-2xl border border-slate-100 overflow-hidden">
+                    <h4 className="text-indigo-700 text-[10px] mb-1 font-black uppercase">RUMUSAN PROGRAM</h4>
+                    <div className="report-content-text italic line wrap-text">{data.summary}</div>
+                </div>
+                <div className="flex-1 bg-blue-200 text-blue p-4 rounded-2xl overflow-hidden">
+                    <h4 className="text-[10px] border-b border-white/20 pb-1 mb-2 font-black uppercase">IMPAK PROGRAM</h4>
+                    <div className="report-content-text italic leading-tight">"{data.impact}"</div>
+                </div>
+            </div>
+        </div>
+        <div className="shrink-0 h-[15%] mt-3 overflow-hidden bg-emerald-200 text-blue p-4 rounded-2xl">
+           <h4 className="text-[11px] border-b border-white/20 pb-1 mb-1 font-black uppercase whitespace-nowrap">TINDAK SUSUL</h4>
+           <div className="report-content-text italic leading-snug">{data.suggestions}</div>
+        </div>
+      </div>
+    );
+
+    const TemplateT2 = ({ data, images }) => (
+      <div id="report-element" className="p-8 flex flex-col h-full bg-white text-slate-800 overflow-hidden uppercase w-full">
+          <UnifiedHeader data={data} />
+          <div className="flex-1 grid grid-cols-2 gap-6 mt-6 overflow-hidden">
+              <div className="flex flex-col gap-4 overflow-hidden pr-2">
+                  <div className="bg-slate-50 p-4 rounded-2xl border-l-4 border-blue-600 shrink-0 h-[20%] overflow-hidden">
+                      <h4 className="text-[10px] text-blue-600 font-black mb-1 uppercase">OBJEKTIF</h4>
+                      <div className="report-content-text">{data.objectives}</div>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl border-l-4 border-blue-400 shrink-0 h-[11%] overflow-hidden">
+                      <h4 className="text-[10px] text-blue-500 font-black mb-1 uppercase">AKTIVITI</h4>
+                      <div className="report-content-text">{data.activities}</div>
+                  </div>
+                  <div className="bg-indigo-50 p-4 rounded-2xl border-l-4 border-indigo-400 shrink-0 h-[20%] overflow-hidden shadow-sm">
+                      <h4 className="text-[10px] text-indigo-500 font-black mb-1 uppercase">RUMUSAN</h4>
+                      <div className="report-content-text italic">{data.summary}</div>
+                  </div>
+                  <div className="bg-blue-600 text-white p-4 rounded-2xl shrink-0 h-[20%] overflow-hidden">
+                      <h4 className="text-[10px] border-b border-white/20 pb-1 mb-1 font-black uppercase">IMPAK PROGRAM</h4>
+                      <div className="report-content-text italic">"{data.impact}"</div>
+                  </div>
+                  <div className="bg-emerald-600 text-white p-4 rounded-2xl shrink-0 h-[20%] overflow-hidden">
+                      <h4 className="text-[10px] border-b border-white/20 pb-1 mb-1 font-black uppercase">TINDAK SUSUL</h4>
+                      <div className="report-content-text italic">"{data.suggestions}"</div>
+                  </div>
+              </div>
+              <div className="flex flex-col gap-4 overflow-hidden font-normal uppercase">
+                  <div className="grid grid-cols-2 gap-2 shrink-0">
+                      {[ {l:'TARIKH', v:data.date}, {l:'MASA', v:data.time}, {l:'TEMPAT', v:data.venue}, {l:'SASARAN', v:data.target} ].map((x,i) => (
+                          <div key={i} className="min-w-0 bg-slate-100 p-2 rounded-xl flex flex-col justify-center">
+                              <span className="text-[10px] text-slate-500 block font-black uppercase">{x.l}</span>
+                              <span className="text-[10px] font-bold block leading-tight">{x.v || "-"}</span>
+                          </div>
+                      ))}
+                  </div>
+                  <div className="flex-1 flex flex-col gap-3 overflow-hidden">
+                      <h4 className="text-[11px] text-slate-400 text-center uppercase border-t pt-2 font-black shrink-0">GALERI PROGRAM</h4>
+                      {images.map((img, i) => (
+                          <div key={i} className="w-full flex-1 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 shadow-sm min-h-0">
+                              {img ? <img src={img} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[9px] text-slate-200 uppercase">IMEJ {i+1}</div>}
+                          </div>
+                      ))}
+                  </div>
+              </div>
+          </div>
+      </div>
+    );
+
+    const TemplateT3 = ({ data, images }) => (
+      <div id="report-element" className="flex flex-col h-full bg-slate-50 overflow-hidden uppercase w-full">
+          <div className="bg-slate-900 text-white p-6 rounded-b-[2.5rem] shadow-2xl shrink-0">
+              <UnifiedHeader data={data} dark={true} colorClass="text-blue-400" />
+              <div className="mt-4 flex justify-around border-t border-white/20 pt-4 uppercase">
+                  {[ {l:'TARIKH', v:data.date}, {l:'TEMPAT', v:data.venue}, {l:'MASA', v:data.time}, {l:'SASARAN', v:data.target} ].map((x,i) => (
+                      <div key={i} className="text-center px-3">
+                          <span className="text-[11px] text-slate-400 block font-black mb-0.5">{x.l}</span>
+                          <span className="text-[11px] text-white font-black">{x.v || "-"}</span>
+                      </div>
+                  ))}
+              </div>
+          </div>
+          <div className="flex-1 p-6 flex flex-col gap-4 overflow-hidden">
+              <div className="grid grid-cols-3 gap-4 h-[35%] shrink-0 overflow-hidden">
+                   <div className="bg-white p-3 rounded-2xl shadow-md border-b-4 border-blue-600">
+                      <h4 className="text-blue-600 text-[10px] font-black uppercase tracking-widest">OBJEKTIF</h4>
+                      <div className="report-content-text font-bold leading-tight">{data.objectives}</div>
+                  </div>
+                   <div className="bg-white p-3 rounded-2xl shadow-md border-b-4 border-blue-400">
+                      <h4 className="text-blue-500 text-[10px] font-black uppercase tracking-widest">AKTIVITI</h4>
+                      <div className="report-content-text font-bold leading-tight">{data.activities}</div>
+                  </div>
+                   <div className="bg-white p-3 rounded-2xl shadow-md border-b-4 border-indigo-400">
+                      <h4 className="text-indigo-500 text-[10px] font-black uppercase tracking-widest">RUMUSAN</h4>
+                      <div className="report-content-text font-bold italic leading-tight">{data.summary}</div>
+                  </div>
+              </div>
+              <div className="h-[30%] grid grid-cols-4 gap-3 shrink-0">
+                  {images.map((img, i) => (
+                      <div key={i} className="rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-slate-200 relative h-full">
+                          {img ? <img src={img} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 text-[10px] font-black">G{i+1}</div>}
+                      </div>
+                  ))}
+              </div>
+              <div className="flex-1 grid grid-cols-2 gap-5 overflow-hidden">
+                  <div className="bg-blue-600 text-white p-5 rounded-[2.5rem] shadow-xl flex flex-col overflow-hidden">
+                      <h4 className="text-[10px] border-b border-white/20 pb-1 mb-2 font-black uppercase tracking-widest shrink-0">IMPAK PROGRAM</h4>
+                      <div className="report-content-text font-bold italic flex-1 overflow-hidden">"{data.impact}"</div>
+                  </div>
+                  <div className="bg-emerald-600 text-white p-5 rounded-[2.5rem] shadow-xl flex flex-col overflow-hidden">
+                      <h4 className="text-[10px] border-b border-white/20 pb-1 mb-2 font-black uppercase tracking-widest shrink-0">TINDAK SUSUL</h4>
+                      <div className="report-content-text font-bold italic flex-1 overflow-hidden">"{data.suggestions}"</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+    );
+
+    const TemplateT4 = ({ data, images }) => (
+      <div id="report-element" className="p-8 flex flex-col h-full bg-white overflow-hidden uppercase w-full">
+          <UnifiedHeader data={data} />
+          <div className="grid grid-cols-4 gap-2 mt-4 shrink-0 uppercase">
+            {[ {l:'Tarikh',v:data.date}, {l:'Masa',v:data.time}, {l:'Tempat',v:data.venue}, {l:'Sasaran',v:data.target} ].map((x, i) => (
+              <div key={i} className="bg-slate-50 border rounded-xl p-2 flex flex-col items-center min-w-0">
+                <span className="text-[10px] text-slate-400 block font-bold uppercase">{x.l}</span>
+                <span className="text-[10px] font-normal uppercase text-center w-full">{x.v || "-"}</span>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3 my-4 shrink-0 h-[38%]">
+              {images.slice(0,4).map((img, i) => (
+                <div key={i} className="rounded-[2rem] border shadow-md overflow-hidden bg-slate-50 w-full h-full relative">
+                  {img ? <img src={img} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200 text-[9px]">G{i+1}</div>}
+                </div>
+              ))}
+          </div>
+          <div className="grid grid-cols-2 gap-4 flex-1 overflow-hidden mt-4">
+              <div className="flex flex-col gap-3 overflow-hidden">
+                  <div className="border-l-4 border-blue-600 pl-4 h-[15%] overflow-hidden bg-white shrink-0">
+                      <h4 className="text-[10px] text-blue-600 mb-1 font-black uppercase">AKTIVITI</h4>
+                      <div className="report-content-text">{data.activities}</div>
+                  </div>
+                  <div className="bg-indigo-50 p-4 rounded-3xl h-[42%] overflow-hidden border border-indigo-100 shrink-0">
+                      <h4 className="text-[10px] text-indigo-700 mb-1 font-black uppercase">RUMUSAN</h4>
+                      <div className="report-content-text italic">{data.summary}</div>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-3xl flex-1 overflow-hidden border flex flex-col">
+                      <h4 className="text-[10px] text-slate-500 mb-2 font-black uppercase">IMPAK PROGRAM</h4>
+                      <div className="report-content-text italic flex-1 overflow-hidden">"{data.impact}"</div>
+                  </div>
+              </div>
+              <div className="flex flex-col gap-4 overflow-hidden font-normal uppercase">
+                  <div className="bg-blue-50 p-4 rounded-3xl border border-blue-100 h-[45%] overflow-hidden shrink-0">
+                      <h4 className="text-[11px] text-blue-600 mb-2 font-black uppercase">OBJEKTIF</h4>
+                      <div className="report-content-text">{data.objectives}</div>
+                  </div>
+                  <div className="bg-emerald-50 p-4 rounded-3xl border border-emerald-100 flex-1 overflow-hidden">
+                      <h4 className="text-[11px] text-emerald-800 mb-1 font-black uppercase whitespace-nowrap">TINDAK SUSUL</h4>
+                      <div className="report-content-text italic">"{data.suggestions}"</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+    );
+
+    const TemplateRouter = ({ id, data, images }) => {
+      switch(id) {
+        case 'T2': return <TemplateT2 data={data} images={images} />;
+        case 'T3': return <TemplateT3 data={data} images={images} />;
+        case 'T4': return <TemplateT4 data={data} images={images} />;
+        default: return <TemplateT1 data={data} images={images} />;
+      }
+    };
+
+    // ========= MAIN APP =========
+    function App() {
+      const [isProcessing, setIsProcessing] = useState(false);
+      const [status, setStatus] = useState({ type: '', text: '' });
+      const [selectedTemplate, setSelectedTemplate] = useState('T1');
+      const [images, setImages] = useState([null, null, null, null]);
+      const [inputMethod, setInputMethod] = useState('manual');
+      const [archiveSearch, setArchiveSearch] = useState("");
+      const [archiveItems, setArchiveItems] = useState([]);
+      const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+
+      // ===== FALLBACK STATE =====
+      // chainStatus: array objek { ...model, state: 'pending' | 'trying' | 'success' | 'failed' }
+      const [chainStatus, setChainStatus] = useState(AI_MODELS.map(m => ({ ...m, state: 'pending' })));
+      const [activeModel, setActiveModel] = useState(null);
+
+      const [formData, setFormData] = useState({
+        schoolName: 'SMK TINGGI KUCHING',
+        accountability: '3.1 PENGURUSAN KURIKULUM',
+        mainTask: '3.1.1 KETETAPAN PELAKSANAAN KURIKULUM',
+        programName: '', date: '', time: '', venue: '', target: '', objectives: '', activities: '', summary: '', impact: '', suggestions: ''
+      });
+
+      const fileInputRef = useRef(null);
+
+      useEffect(() => {
+        if (status.text && status.type !== 'info') {
+          const t = setTimeout(() => setStatus({ type: '', text: '' }), 4500);
+          return () => clearTimeout(t);
+        }
+      }, [status]);
+
+      // Reset visualizer ke pending
+      const resetChainStatus = () => {
+        setChainStatus(AI_MODELS.map(m => ({ ...m, state: 'pending' })));
+      };
+
+      // Update 1 model dalam chain
+      const updateModelState = (modelId, newState) => {
+        setChainStatus(prev => prev.map(m => m.id === modelId ? { ...m, state: newState } : m));
+      };
+
+      // ====== AUTO FALLBACK CALLER ======
+      const callGeminiWithFallback = async (requestBody) => {
+        resetChainStatus();
+        let lastError = null;
+
+        for (let i = 0; i < AI_MODELS.length; i++) {
+          const model = AI_MODELS[i];
+          updateModelState(model.id, 'trying');
+
+          try {
+            setStatus({
+              type: 'info',
+              text: i === 0
+                ? `🚀 MENCUBA MODEL UTAMA: ${model.label}...`
+                : `⚡ AUTO-FALLBACK #${i} → ${model.label}...`
+            });
+
+            const res = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${apiKey}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+              }
+            );
+
+            if (!res.ok) {
+              const errText = await res.text();
+              lastError = new Error(`${model.label}: HTTP ${res.status}`);
+              updateModelState(model.id, 'failed');
+              console.warn(`[Fallback] ${model.label} gagal:`, errText.substring(0, 200));
+              continue;
+            }
+
+            const result = await res.json();
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (!text) {
+              lastError = new Error(`${model.label}: Respons kosong`);
+              updateModelState(model.id, 'failed');
+              continue;
+            }
+
+            // Berjaya!
+            updateModelState(model.id, 'success');
+            setActiveModel(model);
+            return { text, modelUsed: model, attemptIndex: i };
+
+          } catch (e) {
+            lastError = e;
+            updateModelState(model.id, 'failed');
+            console.warn(`[Fallback] ${model.label} exception:`, e.message);
+            continue;
+          }
+        }
+
+        throw lastError || new Error("Semua 5 model AI gagal dihubungi.");
+      };
+
+      // ====== ANALISIS DOKUMEN ======
+      const callGeminiAI = async (prompt, fileBase64 = null, mimeType = "image/png") => {
+        if (!apiKey) return setStatus({ type: 'error', text: 'SILA MASUKKAN API KEY.' });
+        setIsProcessing(true);
+
+        try {
+          const base64Data = fileBase64 && fileBase64.includes(',') ? fileBase64.split(',')[1] : fileBase64;
+
+          const body = {
+            contents: [{
+              parts: [
+                { text: prompt },
+                ...(base64Data ? [{ inlineData: { mimeType: mimeType, data: base64Data } }] : [])
+              ]
+            }],
+            systemInstruction: {
+              parts: [{
+                text: `Analisis maklumat laporan. Jawab HANYA JSON: {
+                  "program": "Nama program (HURUF BESAR)",
+                  "accountability": "Pilih nilai yang TEPAT dari: 3.1 PENGURUSAN KURIKULUM / 3.2 PENGURUSAN KOKURIKULUM / 3.3 PENGURUSAN HAL EHWAL MURID / 5. KEMENJADIAN MURID",
+                  "mainTask": "Pilih Aspek SK@S yang paling relevan dengan accountability yang dipilih",
+                  "tarikh": "Hari Bulan Tahun",
+                  "masa": "Masa program",
+                  "tempat": "Lokasi",
+                  "sasaran": "Pecahan peserta",
+                  "objektif": "Format bullet •",
+                  "aktiviti": "Ringkasan maks 4 baris",
+                  "rumusan": "Ulasan 40-50 perkataan. Bullet •.",
+                  "impak": "Ulasan 60-70 perkataan. Bullet •.",
+                  "tindak_susul": "2 langkah tindak susul. Bullet •."
+                }`
+              }]
+            },
+            generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
+          };
+
+          const { text, modelUsed, attemptIndex } = await callGeminiWithFallback(body);
+          const cleanedText = text.replace(/```json|```/g, "").trim();
+          const ai = JSON.parse(cleanedText);
+
+          const validAcc = aspekMapping[ai.accountability] ? ai.accountability : '3.1 PENGURUSAN KURIKULUM';
+          const validTask = aspekMapping[validAcc].includes(ai.mainTask) ? ai.mainTask : aspekMapping[validAcc][0];
+
+          setFormData(prev => ({
+            ...prev,
+            programName: ai.program || "",
+            accountability: validAcc,
+            mainTask: validTask,
+            date: ai.tarikh || "",
+            time: ai.masa || "",
+            venue: ai.tempat || "",
+            target: ai.sasaran || "",
+            objectives: ai.objektif || "",
+            activities: ai.aktiviti || "",
+            summary: ai.rumusan || "",
+            impak: ai.impak || "",
+            impact: ai.impak || "",
+            suggestions: ai.tindak_susul || ""
+          }));
+
+          const fallbackNote = attemptIndex > 0 ? ` (selepas ${attemptIndex} fallback)` : '';
+          setStatus({ type: 'success', text: `✅ ANALISIS BERJAYA DENGAN ${modelUsed.label}${fallbackNote}!` });
+        } catch (e) {
+          console.error("AI Error:", e);
+          setStatus({ type: 'error', text: `❌ SEMUA MODEL GAGAL: ${e.message}` });
+        } finally {
+          setIsProcessing(false);
+        }
+      };
+
+      const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          callGeminiAI("Ekstrak maklumat dari fail ini secara lengkap.", ev.target.result, file.type);
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const handlePaste = (e) => {
+        if (inputMethod !== 'tampal') return;
+        const itm = e.clipboardData.items;
+        for (let x of itm) {
+          if (x.type.indexOf("image") !== -1) {
+            const rd = new FileReader();
+            rd.onload = (ev) => callGeminiAI("Analisis gambar laporan ini.", ev.target.result, "image/png");
+            rd.readAsDataURL(x.getAsFile());
+            return;
+          }
+        }
+        const text = e.clipboardData.getData('text');
+        if (text.length > 5) callGeminiAI(`Ekstrak maklumat dari teks ini: ${text}`);
+      };
+
+      const generateField = async (field) => {
+        if (!apiKey) return setStatus({ type: 'error', text: 'SILA MASUKKAN API KEY.' });
+        const fieldLabels = { summary: 'Rumusan', impact: 'Impak', suggestions: 'Tindak Susul' };
+        setIsProcessing(true);
+        try {
+          const prompt = `Berdasarkan Program: ${formData.programName}, Objektif: ${formData.objectives}. Jana ulasan ${fieldLabels[field]} dalam Bahasa Melayu (maks 50 patah perkataan, Standard Case).`;
+          const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7 } };
+          const { text, modelUsed, attemptIndex } = await callGeminiWithFallback(body);
+          if (text) {
+            setFormData(prev => ({ ...prev, [field]: text.trim() }));
+            const fallbackNote = attemptIndex > 0 ? ` (fallback #${attemptIndex})` : '';
+            setStatus({ type: 'success', text: `✅ ${fieldLabels[field].toUpperCase()} DIJANA (${modelUsed.label}${fallbackNote})` });
+          }
+        } catch (e) {
+          setStatus({ type: 'error', text: `❌ RALAT JANA: ${e.message}` });
+        } finally {
+          setIsProcessing(false);
+        }
+      };
+
+      const saveToCloud = async () => {
+        if (!APP_SCRIPT_URL) { setStatus({ type: 'error', text: 'URL APPSCRIPT TIDAK DITETAPKAN.' }); return; }
+        setIsProcessing(true);
+        setStatus({ type: 'info', text: 'MENJANA PDF & MENYIMPAN...' });
+        try {
+          window.scrollTo(0, 0);
+          const element = document.querySelector(".paper-container");
+          const opt = { margin: 0, filename: `OPR_${formData.programName}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollX: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } };
+          const worker = html2pdf().set(opt).from(element).toPdf().get('pdf');
+          await worker.then(async (pdf) => {
+            const pageCount = pdf.internal.getNumberOfPages();
+            if (pageCount > 1) pdf.deletePage(pageCount);
+            const pdfBase64 = pdf.output('datauristring');
+            const payload = { ...formData, images: images.filter(i => i !== null), pdfBase64 };
+            const res = await fetch(APP_SCRIPT_URL, { method: 'POST', mode: 'cors', body: JSON.stringify(payload) });
+            const result = await res.json();
+            if (result.status === "success") setStatus({ type: 'success', text: 'DATA DISIMPAN KE CLOUD & DRIVE!' });
+            else throw new Error(result.message);
+          });
+        } catch (e) { setStatus({ type: 'error', text: 'RALAT SIMPAN DATA.' }); }
+        finally { setTimeout(() => setIsProcessing(false), 2000); }
+      };
+
+      const fetchFromCloud = async () => {
+        if (!APP_SCRIPT_URL) { setStatus({ type: 'error', text: 'URL APPSCRIPT TIDAK DITETAPKAN.' }); return; }
+        setIsProcessing(true);
+        try {
+          const res = await fetch(APP_SCRIPT_URL);
+          const data = await res.json();
+          if (Array.isArray(data)) { setArchiveItems(data.reverse()); setIsArchiveOpen(true); }
+          else { throw new Error(); }
+        } catch (e) { setStatus({ type: 'error', text: 'ARKIB KOSONG ATAU RALAT APPSCRIPT.' }); }
+        finally { setIsProcessing(false); }
+      };
+
+      const loadArchiveData = (item) => {
+        setFormData({ ...formData, ...item });
+        if (item.images) {
+          const newImgs = [null, null, null, null];
+          item.images.forEach((img, i) => { if (i < 4) newImgs[i] = img; });
+          setImages(newImgs);
+        }
+        setIsArchiveOpen(false);
+        setStatus({ type: 'success', text: 'REKOD DIMUATKAN DARI CLOUD!' });
+      };
+
+      const filteredArchive = useMemo(() => {
+        return archiveItems.filter(item =>
+          (item.programName && item.programName.toLowerCase().includes(archiveSearch.toLowerCase())) ||
+          (item.date && String(item.date).includes(archiveSearch))
+        );
+      }, [archiveItems, archiveSearch]);
+
+      const handleImagePaste = (e, index) => {
+        const itm = e.clipboardData.items;
+        for (let x of itm) {
+          if (x.type.indexOf("image") !== -1) {
+            const rd = new FileReader();
+            rd.onload = (f) => { const n = [...images]; n[index] = f.target.result; setImages(n); };
+            rd.readAsDataURL(x.getAsFile());
+          }
+        }
+      };
+
+      return (
+        <div className="flex flex-col lg:flex-row h-screen overflow-hidden text-slate-800">
+
+          {/* ================= SIDEBAR ================= */}
+          <aside className="w-full lg:w-[400px] glass border-r border-white/60 overflow-y-auto custom-scrollbar shadow-2xl z-20 print-hide">
+
+            <div className="p-6">
+              {/* Header Card */}
+              <div className="relative overflow-hidden rounded-3xl p-5 mb-5" style={{background: 'linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #6d28d9 100%)'}}>
+                <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+                <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-fuchsia-500/20 rounded-full blur-3xl"></div>
+                <div className="relative flex items-center gap-3 text-white">
+                  <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0 border border-white/20">
+                    <IconBrain />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="font-display text-lg font-bold leading-tight tracking-tight">OPR PROGRAM DAN AKTIVITI</h1>
+                    <p className="text-[11px] text-indigo-200 font-medium">Auto-Fallback Edition · V12.1</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center gap-2 text-[18px] text-indigo-200 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>SMK TINGGI KUCHING</span>
+                </div>
+              </div>
+
+              {/* ===== AI AUTO-FALLBACK CHAIN VISUALIZER ===== */}
+              <div className="mb-5 p-4 bg-white/85 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="badge-ai uppercase">AI Engine</span>
+                    <h3 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Auto Fallback Chain</h3>
+                  </div>
+                  <span className="badge-auto uppercase">
+                    <IconBolt /> AUTO
+                  </span>
+                </div>
+
+                {/* Chain Visualizer */}
+                <div className="flex flex-wrap items-center gap-1 mb-3">
+                  {chainStatus.map((m, idx) => (
+                    <React.Fragment key={m.id}>
+                      <div
+                        className={`chain-node ${m.state} px-2 py-1.5 rounded-lg text-[9px] font-bold flex items-center gap-1`}
+                        title={m.desc}
+                      >
+                        <span className="font-display">{m.tier}</span>
+                        <span>{m.label}</span>
+                        {m.state === 'success' && <IconCheck />}
+                        {m.state === 'trying' && <div className="w-2 h-2 border-2 border-amber-700 border-t-transparent rounded-full animate-spin"></div>}
+                      </div>
+                      {idx < chainStatus.length - 1 && (
+                        <span className="chain-arrow text-[9px]">→</span>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+
+                {/* Info Box */}
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-2.5">
+                  <p className="text-[9px] text-indigo-900 leading-relaxed font-medium">
+                    <span className="font-bold">ℹ️ Cara kerja:</span> Sistem cuba <span className="font-bold">2.5 Flash</span> dahulu. Jika gagal → auto-cuba model seterusnya mengikut susunan sehingga berjaya.
+                  </p>
+                  {activeModel && (
+                    <div className="mt-2 pt-2 border-t border-indigo-100 flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-slate-600 uppercase">Terakhir Berjaya:</span>
+                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        ✓ {activeModel.label}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Input Method */}
+              <div className="mb-4">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Kaedah Input</label>
+                <div className="grid grid-cols-3 gap-2">
+                   <button onClick={() => setInputMethod('tampal')} className={`method-card p-3 rounded-2xl bg-white flex flex-col items-center gap-1.5 ${inputMethod === 'tampal' ? 'method-active' : 'text-slate-400 border-slate-200'}`}>
+                     <IconPaste /><span className="text-[10px] font-bold uppercase">Tampal</span>
+                   </button>
+                   <button onClick={() => setInputMethod('upload')} className={`method-card p-3 rounded-2xl bg-white flex flex-col items-center gap-1.5 ${inputMethod === 'upload' ? 'method-active' : 'text-slate-400 border-slate-200'}`}>
+                     <IconUpload /><span className="text-[10px] font-bold uppercase">Upload</span>
+                   </button>
+                   <button onClick={() => setInputMethod('manual')} className={`method-card p-3 rounded-2xl bg-white flex flex-col items-center gap-1.5 ${inputMethod === 'manual' ? 'method-active' : 'text-slate-400 border-slate-200'}`}>
+                     <IconManual /><span className="text-[10px] font-bold uppercase">Manual</span>
+                   </button>
+                </div>
+              </div>
+
+              {/* Drop Zone */}
+              {inputMethod !== 'manual' && (
+                <div
+                  onClick={() => inputMethod === 'upload' && fileInputRef.current.click()}
+                  onPaste={handlePaste}
+                  tabIndex="0"
+                  className={`p-8 rounded-3xl border-2 border-dashed text-center mb-5 relative cursor-pointer transition-all ${isProcessing ? 'pulse-glow' : ''} bg-gradient-to-br from-indigo-50 via-white to-purple-50 border-indigo-300 hover:border-indigo-500 hover:shadow-lg`}
+                >
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
+                    {inputMethod === 'upload' ? <IconUpload /> : <IconPaste />}
+                  </div>
+                  <p className="text-[11px] font-bold text-indigo-900 uppercase tracking-wide">
+                    {inputMethod === 'upload' ? 'Klik untuk Upload' : 'Klik & Tekan Ctrl+V'}
+                  </p>
+                  <p className="text-[9px] text-indigo-400 mt-1 font-medium normal-case">
+                    {inputMethod === 'upload' ? 'Sokong: Image, PDF, DOC, DOCX' : 'Tampal imej atau teks laporan'}
+                  </p>
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf,.doc,.docx" onChange={handleFileUpload} />
+                  {isProcessing && (
+                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center rounded-3xl gap-2">
+                      <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-[9px] font-bold text-indigo-600 uppercase">AUTO-FALLBACK AKTIF...</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Status Toast */}
+              {status.text && (
+                <div className={`p-3 mb-4 rounded-2xl text-[10px] font-bold uppercase fade-in-up ${status.type === 'error' ? 'toast-error' : status.type === 'success' ? 'toast-success' : 'toast-info'}`}>
+                  {status.text}
+                </div>
+              )}
+
+              {/* Form Fields */}
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wide block mb-1.5">Standard SK@S</label>
+                  <select
+                    className="input-modern w-full px-4 py-3 text-[11px] rounded-2xl font-bold uppercase"
+                    value={formData.accountability}
+                    onChange={e => {
+                      const selectedStandard = e.target.value;
+                      const defaultAspek = aspekMapping[selectedStandard][0];
+                      setFormData({...formData, accountability: selectedStandard, mainTask: defaultAspek});
+                    }}
+                  >
+                    <option value="3.1 PENGURUSAN KURIKULUM">3.1 PENGURUSAN KURIKULUM</option>
+                    <option value="3.2 PENGURUSAN KOKURIKULUM">3.2 PENGURUSAN KOKURIKULUM</option>
+                    <option value="3.3 PENGURUSAN HAL EHWAL MURID">3.3 PENGURUSAN HAL EHWAL MURID</option>
+                    <option value="5. KEMENJADIAN MURID">5. KEMENJADIAN MURID</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wide block mb-1.5">Aspek SK@S</label>
+                  <select
+                    className="input-modern w-full px-4 py-3 text-[11px] rounded-2xl font-bold uppercase"
+                    value={formData.mainTask}
+                    onChange={e => setFormData({...formData, mainTask: e.target.value})}
+                  >
+                    {(aspekMapping[formData.accountability] || []).map((aspek, index) => (
+                      <option key={index} value={aspek}>{aspek}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-1.5">Nama Program</label>
+                  <input className="input-modern w-full px-4 py-3 text-[11px] rounded-2xl font-bold uppercase" value={formData.programName} onChange={e => setFormData({...formData, programName: e.target.value})} placeholder="Masukkan nama program..." />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Tarikh</label>
+                    <input className="input-modern w-full px-3 py-2.5 text-[11px] rounded-xl font-bold" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} placeholder="1 Januari 2026" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Masa</label>
+                    <input className="input-modern w-full px-3 py-2.5 text-[11px] rounded-xl font-bold" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} placeholder="8:00 pagi" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Tempat</label>
+                    <input className="input-modern w-full px-3 py-2.5 text-[11px] rounded-xl font-bold uppercase" value={formData.venue} onChange={e => setFormData({...formData, venue: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Sasaran</label>
+                    <input className="input-modern w-full px-3 py-2.5 text-[11px] rounded-xl font-bold uppercase" value={formData.target} onChange={e => setFormData({...formData, target: e.target.value})} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Objektif</label>
+                  <textarea className="input-modern w-full px-3 py-2.5 text-[11px] rounded-xl font-semibold min-h-[60px] resize-none" value={formData.objectives} onChange={e => setFormData({...formData, objectives: e.target.value})} />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Aktiviti / Pengisian</label>
+                  <textarea className="input-modern w-full px-3 py-2.5 text-[11px] rounded-xl font-semibold min-h-[60px] resize-none" value={formData.activities} onChange={e => setFormData({...formData, activities: e.target.value})} />
+                </div>
+
+                {['summary', 'impact', 'suggestions'].map((f) => (
+                  <div key={f}>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">
+                        {f === 'summary' ? 'Rumusan' : f === 'impact' ? 'Impak' : 'Tindak Susul'}
+                      </label>
+                      <button
+                        onClick={() => generateField(f)}
+                        disabled={isProcessing}
+                        className="btn-gradient-primary text-white text-[9px] px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 uppercase disabled:opacity-50"
+                      >
+                        <IconSparkles /> Jana
+                      </button>
+                    </div>
+                    <textarea className="input-modern w-full px-3 py-2.5 text-[11px] rounded-xl font-semibold min-h-[70px] italic bg-slate-50 resize-none" value={formData[f]} onChange={e => setFormData({...formData, [f]: e.target.value})} />
+                  </div>
+                ))}
+
+                {/* Galeri Imej */}
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Galeri Imej (4)</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {images.map((img, i) => (
+                      <div key={i} className="aspect-square border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50 relative overflow-hidden transition-all focus-within:ring-2 focus-within:ring-indigo-300" onPaste={(e) => handleImagePaste(e, i)} tabIndex="0">
+                        {img ? (
+                          <>
+                            <img src={img} className="w-full h-full object-cover rounded-lg" />
+                            <button onClick={() => { const n = [...images]; n[i] = null; setImages(n); }} className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition-transform hover:scale-110">
+                              <IconTrash />
+                            </button>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center gap-0.5 text-slate-400">
+                            <span className="text-lg font-light">+</span>
+                            <span className="text-[8px] font-bold">G{i+1}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[9px] text-slate-400 mt-1.5 font-medium">Klik kotak & tampal (Ctrl+V)</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-6 grid grid-cols-2 gap-2.5">
+                 <button onClick={() => window.print()} className="btn-gradient-success py-3 text-white rounded-2xl text-[10px] font-bold uppercase flex items-center justify-center gap-2">
+                   <IconPrinter /> Cetak PDF
+                 </button>
+                 <button onClick={() => {
+                     const content = document.getElementById("report-element").innerHTML;
+                     const blob = new Blob(['\ufeff', `<html><head><meta charset='utf-8'></head><body style='font-family:Arial'>${content}</body></html>`], { type: 'application/msword' });
+                     const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `${formData.programName || 'OPR'}.doc`; link.click();
+                 }} className="btn-gradient-word py-3 text-white rounded-2xl text-[10px] font-bold uppercase flex items-center justify-center gap-2">
+                   <IconWord /> Word
+                 </button>
+                 <button onClick={saveToCloud} className="btn-gradient-cloud py-3 text-white rounded-2xl text-[10px] font-bold uppercase flex items-center justify-center gap-2">
+                   <IconCloud /> Simpan Cloud
+                 </button>
+                 <button onClick={fetchFromCloud} className="btn-gradient-archive py-3 text-white rounded-2xl text-[10px] font-bold uppercase flex items-center justify-center gap-2">
+                   <IconArchive /> Arkib Cloud
+                 </button>
+                 <button onClick={() => location.reload()} className="btn-gradient-danger py-2.5 text-white rounded-2xl text-[10px] col-span-2 font-bold uppercase flex items-center justify-center gap-2 mt-1">
+                   <IconRefresh /> Reset Borang
+                 </button>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-slate-200 text-center">
+                <p className="text-[9px] text-slate-400 font-medium">AI SMART OPR · Auto-Fallback Edition V12.1</p>
+                <p className="text-[8px] text-slate-300 mt-0.5">5 Model Gemini · Seamless Failover</p>
+              </div>
+            </div>
+          </aside>
+
+          {/* ================= MAIN PREVIEW ================= */}
+          <main className="flex-1 flex flex-col items-center p-4 lg:p-8 overflow-y-auto custom-scrollbar relative">
+
+            {/* Top Toolbar */}
+            <div className="w-full max-w-4xl mb-6 flex items-center justify-between gap-3 sticky top-0 z-30 print-hide">
+              <div className="flex items-center gap-2">
+                <div className="glass px-4 py-2.5 rounded-2xl shadow-lg border border-white/50 flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Template:</span>
+                  <select
+                    className="bg-transparent text-[11px] font-bold uppercase outline-none cursor-pointer text-indigo-700"
+                    value={selectedTemplate}
+                    onChange={e => setSelectedTemplate(e.target.value)}
+                  >
+                    {globalTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="glass px-4 py-2.5 rounded-2xl shadow-lg border border-white/50 flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${isProcessing ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`}></div>
+                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">
+                  {isProcessing ? 'Auto-Fallback' : 'Bersedia'}
+                </span>
+                {activeModel && !isProcessing && (
+                  <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200 ml-1">
+                    ✓ {activeModel.label}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Paper Preview */}
+            <div className="mb-20 transform scale-[0.38] md:scale-[0.65] xl:scale-[0.92] origin-top transition-all print:scale-100 print:m-0">
+              <div className="paper-container select-text">
+                <TemplateRouter id={selectedTemplate} data={formData} images={images} />
+              </div>
+            </div>
+          </main>
+
+          {/* ================= ARCHIVE MODAL ================= */}
+          {isArchiveOpen && (
+            <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] flex items-center justify-center p-6 fade-in-up">
+              <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl flex flex-col relative overflow-hidden border border-white/50">
+                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-indigo-600 to-purple-700"></div>
+
+                <button onClick={() => setIsArchiveOpen(false)} className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/20 backdrop-blur text-white flex items-center justify-center font-bold hover:bg-white/30 transition-colors z-10">
+                  <IconX />
+                </button>
+
+                <div className="relative p-8 pt-10 text-center">
+                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur px-4 py-1.5 rounded-full mb-3 border border-white/30">
+                    <IconArchive />
+                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">Digital Archive</span>
+                  </div>
+                  <h2 className="font-display text-2xl font-bold text-white mb-5 tracking-tight">Arkib OPR</h2>
+                  <input
+                    type="text"
+                    placeholder="🔍  Cari tajuk program atau tarikh..."
+                    className="w-full px-5 py-4 bg-white/95 border-0 rounded-2xl text-sm font-semibold outline-none focus:ring-4 focus:ring-white/40 transition-all shadow-lg"
+                    value={archiveSearch}
+                    onChange={(e) => setArchiveSearch(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-8 pb-4 max-h-[45vh] custom-scrollbar bg-slate-50">
+                  <div className="space-y-2.5 pt-4">
+                    {filteredArchive.length > 0 ? filteredArchive.map((item, idx) => (
+                      <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-indigo-400 hover:shadow-md transition-all">
+                        <div className="flex-1 pr-4 min-w-0">
+                          <h3 className="font-bold text-[12px] text-slate-800 leading-tight mb-1 uppercase truncate">{item.programName || "TIADA TAJUK"}</h3>
+                          <p className="text-[10px] text-slate-400 font-semibold">{item.date || "-"} · {item.venue || "-"}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                           {item.pdfUrl && (
+                             <button onClick={() => window.open(item.pdfUrl, '_blank')} className="btn-gradient-archive text-white px-4 py-2 rounded-xl text-[9px] font-bold uppercase">
+                               PDF
+                             </button>
+                           )}
+                           <button onClick={() => loadArchiveData(item)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-[9px] font-bold uppercase transition-colors">
+                             Buka
+                           </button>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+                          <IconArchive />
+                        </div>
+                        <p className="text-[11px] font-bold uppercase text-slate-400">Tiada Rekod Dijumpai</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-8 pt-4 bg-slate-50 border-t border-slate-100">
+                  <button onClick={fetchFromCloud} className="btn-gradient-primary w-full py-4 text-white rounded-2xl text-[11px] font-bold uppercase flex items-center justify-center gap-2">
+                    <IconRefresh /> Kemaskini dari Cloud
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

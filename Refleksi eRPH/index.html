@@ -1,0 +1,1028 @@
+<!-- File: erph-generator-v3.1.html -->
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Penjana eRPH v3.1 - Dengan Patch Stabiliti</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+html, body { 
+  height: 100%; 
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+body {
+  min-height: 100vh;
+}
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; }
+  .card { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+  .loader { border:3px solid #f3f3f3; border-top:3px solid #3b82f6; border-radius:50%; width:18px; height:18px; animation:spin 1s linear infinite; display:inline-block; vertical-align:middle; }
+  @keyframes spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+  .upload-zone { border:3px dashed #93c5fd; transition:all 0.2s; }
+  .upload-zone:hover { border-color:#3b82f6; background:#eff6ff; }
+  .upload-zone.dragover { border-color:#1e40af; background:#dbeafe; }
+  .badge-5I { background:#dbeafe; color:#1e40af; }
+  .badge-5H { background:#fef3c7; color:#92400e; }
+  .step-active { background:#3b82f6; color:white; }
+  .step-done { background:#10b981; color:white; }
+  .step-pending { background:#e5e7eb; color:#6b7280; }
+  .model-tag { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:bold; }
+  .model-ok { background:#d1fae5; color:#065f46; }
+  .model-fail { background:#fee2e2; color:#991b1b; }
+  .model-trying { background:#fef3c7; color:#92400e; }
+  
+  /* RPH Format Rasmi - 1 RPH = 1 muka surat (STRICT) */
+  .rph-page {
+    width: 210mm;
+    height: 297mm;
+    padding: 8mm 10mm;
+    box-sizing: border-box;
+    background: white;
+    font-family: Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.25;
+    page-break-after: always;
+    page-break-inside: avoid;
+    overflow: hidden;
+  }
+  .rph-page:last-child { page-break-after: auto; }
+  .rph-table { 
+    width:100%; 
+    border-collapse:collapse; 
+    page-break-inside: avoid;
+  }
+  .rph-table tr { page-break-inside: avoid; }
+  .rph-table td { 
+    border:1px solid #000; 
+    padding:3px 5px; 
+    vertical-align:top; 
+    page-break-inside: avoid;
+  }
+  .rph-header { background:#e5e7eb; font-weight:bold; text-align:center; }
+  .rph-label { background:#f3f4f6; font-weight:bold; width:22%; }
+  
+  /* Refleksi - perenggan berasingan font 10pt */
+  .rph-refleksi { font-size:10pt; }
+  .rph-refleksi p { 
+    margin: 0 0 6pt 0; 
+    text-align: justify;
+  }
+  .rph-refleksi p:last-child { margin-bottom: 0; }
+  .rph-refleksi b { font-weight: bold; }
+</style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4 md:p-8">
+
+<div class="max-w-6xl mx-auto">
+
+  <!-- HEADER -->
+  <div class="bg-white rounded-2xl card p-6 mb-6">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800">📋 Sistem Penjana eRPH v3.1</h1>
+    <p class="text-gray-600 mt-1">Format rasmi 1 muka surat • AI fallback 4 model • Auto-retry & rate-limit handling</p>
+    
+    <div class="flex items-center justify-between mt-5 text-xs md:text-sm">
+      <div class="flex items-center gap-2">
+        <div id="s1" class="w-8 h-8 rounded-full flex items-center justify-center font-bold step-active">1</div>
+        <span>Upload</span>
+      </div>
+      <div class="flex-1 h-1 bg-gray-200 mx-2"></div>
+      <div class="flex items-center gap-2">
+        <div id="s2" class="w-8 h-8 rounded-full flex items-center justify-center font-bold step-pending">2</div>
+        <span>Pemerhatian</span>
+      </div>
+      <div class="flex-1 h-1 bg-gray-200 mx-2"></div>
+      <div class="flex items-center gap-2">
+        <div id="s3" class="w-8 h-8 rounded-full flex items-center justify-center font-bold step-pending">3</div>
+        <span>Jana AI</span>
+      </div>
+      <div class="flex-1 h-1 bg-gray-200 mx-2"></div>
+      <div class="flex items-center gap-2">
+        <div id="s4" class="w-8 h-8 rounded-full flex items-center justify-center font-bold step-pending">4</div>
+        <span>Muat Turun</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TETAPAN -->
+  <details class="bg-white rounded-2xl card p-6 mb-6">
+    <summary class="cursor-pointer font-bold text-gray-800">⚙️ Tetapan AI & Profil Kelas</summary>
+    
+    <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+      <h3 class="font-semibold text-sm mb-2">🤖 Sistem Fallback AI (4 model)</h3>
+      <p class="text-xs text-gray-700 mb-2">Sistem akan cuba model mengikut urutan. Jika satu gagal, akan beralih ke model seterusnya secara automatik.</p>
+      <div id="senaraiModel" class="space-y-1 text-xs"></div>
+    </div>
+    
+    <div class="mt-4 grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-semibold mb-1">🔑 Google Gemini API Key</label>
+        <input id="geminiKey" type="password" class="w-full border rounded-lg p-2 text-sm" placeholder="Untuk model #1, #2, #3">
+        <p class="text-xs text-gray-500 mt-1">Dapatkan di aistudio.google.com/apikey</p>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1">🔑 OpenAI API Key (opsional)</label>
+        <input id="openaiKey" type="password" class="w-full border rounded-lg p-2 text-sm" placeholder="Untuk model #4 (fallback terakhir)">
+        <p class="text-xs text-gray-500 mt-1">Sebagai sandaran jika Gemini gagal</p>
+      </div>
+    </div>
+    
+    <div class="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+      <h3 class="font-semibold text-sm mb-2">⏱️ Tetapan Stabiliti (PATCH v3.1)</h3>
+      <div class="grid md:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold mb-1">Selang antara request (saat)</label>
+          <input id="delayBetween" type="number" min="0" max="30" value="4" class="w-full border rounded-lg p-2 text-sm">
+          <p class="text-xs text-gray-500 mt-1">Tinggi = lebih stabil tetapi lebih lambat</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1">Bilangan cubaan retry per model</label>
+          <input id="maxRetry" type="number" min="1" max="5" value="3" class="w-full border rounded-lg p-2 text-sm">
+          <p class="text-xs text-gray-500 mt-1">Auto-retry bila rate-limit (429/503)</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="mt-4 grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-semibold text-blue-800 mb-1">Profil Kelas 5I</label>
+        <textarea id="profil5I" rows="3" class="w-full border rounded-lg p-2 text-sm">Tahap pencapaian sederhana-tinggi. Murid aktif berinteraksi semasa perbincangan, tetapi cepat hilang fokus dalam aktiviti penulisan panjang atau pembentangan rakan yang melebihi 30 minit.</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-amber-800 mb-1">Profil Kelas 5H</label>
+        <textarea id="profil5H" rows="3" class="w-full border rounded-lg p-2 text-sm">Tahap pencapaian sederhana. Ramai murid lemah memerlukan bahan terbeza. Cenderung menyalin maklumat tanpa memberikan pendapat kendiri, dan mengalami kelesuan mental selepas 35 minit aktiviti intensif.</textarea>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <label class="block text-sm font-semibold mb-1">Nama Guru</label>
+      <input id="namaGuru" type="text" class="w-full border rounded-lg p-2" placeholder="Cth: Pn. Aminah binti Ahmad">
+    </div>
+  </details>
+
+  <!-- LANGKAH 1: UPLOAD -->
+  <div class="bg-white rounded-2xl card p-6 mb-6">
+    <h2 class="text-lg font-bold text-gray-800 mb-3">
+      <span class="bg-blue-600 text-white rounded-full w-7 h-7 inline-flex items-center justify-center mr-2">1</span>
+      Upload Fail RPH
+    </h2>
+    <div id="uploadZone" class="upload-zone rounded-xl p-8 text-center cursor-pointer">
+      <div class="text-5xl mb-2">📁</div>
+      <p class="font-semibold text-gray-700">Klik atau seret fail ke sini</p>
+      <p class="text-sm text-gray-500 mt-1">.docx / .txt / .md</p>
+      <input id="fileInput" type="file" accept=".docx,.txt,.md" class="hidden">
+    </div>
+    
+    <div id="fileInfo" class="mt-3 hidden">
+      <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+        <p class="text-sm text-green-800"><b>✅ Fail:</b> <span id="fileName"></span></p>
+        <p class="text-sm text-green-800"><b>📊 Sesi dikesan:</b> <span id="bilSesi">0</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LANGKAH 2: PEMERHATIAN -->
+  <div id="seksyenPemerhatian" class="bg-white rounded-2xl card p-6 mb-6 hidden">
+    <h2 class="text-lg font-bold text-gray-800 mb-3">
+      <span class="bg-blue-600 text-white rounded-full w-7 h-7 inline-flex items-center justify-center mr-2">2</span>
+      Ringkasan Pemerhatian Mingguan
+    </h2>
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+      <textarea id="pemerhatianUmum" rows="5" class="w-full border rounded-lg p-3" 
+        placeholder="Contoh: Minggu ini murid 5I aktif dalam perbincangan tetapi lemah dalam penulisan terbeza. Murid 5H menunjukkan peningkatan dalam aktiviti kumpulan tetapi masih lemah membina ayat majmuk..."></textarea>
+    </div>
+  </div>
+
+  <!-- LANGKAH 3: JANA -->
+  <div id="seksyenJana" class="bg-white rounded-2xl card p-6 mb-6 hidden">
+    <h2 class="text-lg font-bold text-gray-800 mb-3">
+      <span class="bg-blue-600 text-white rounded-full w-7 h-7 inline-flex items-center justify-center mr-2">3</span>
+      Jana Refleksi AI
+    </h2>
+    <button onclick="janaSemua()" id="btnJana" class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-lg font-bold text-lg">
+      🤖 Jana Refleksi (Auto-Fallback)
+    </button>
+    <div id="status" class="mt-3 text-sm"></div>
+    <div id="senaraiRefleksi" class="mt-4 space-y-3"></div>
+  </div>
+
+  <!-- LANGKAH 4: MUAT TURUN -->
+  <div id="seksyenMuatTurun" class="bg-white rounded-2xl card p-6 mb-6 hidden">
+    <h2 class="text-lg font-bold text-gray-800 mb-3">
+      <span class="bg-blue-600 text-white rounded-full w-7 h-7 inline-flex items-center justify-center mr-2">4</span>
+      Muat Turun eRPH (Format Rasmi - 1 RPH = 1 Muka Surat)
+    </h2>
+    <div class="grid md:grid-cols-2 gap-3">
+      <button onclick="muatTurunDocx()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-4 rounded-lg font-bold">
+        📝 Word (.doc)
+      </button>
+      <button onclick="muatTurunPDF()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-lg font-bold">
+        📄 PDF
+      </button>
+    </div>
+    <div class="mt-4">
+      <button onclick="togglePratonton()" class="text-blue-600 hover:underline font-semibold">👁️ Pratonton</button>
+    </div>
+    <div id="pratonton" class="mt-4 border rounded-lg p-4 hidden max-h-[600px] overflow-y-auto bg-gray-100"></div>
+  </div>
+
+</div>
+
+<script>
+//==========================================================
+// AI MODEL FALLBACK CHAIN
+//==========================================================
+const MODEL_CHAIN = [
+  { id:'gemini-3-flash-preview', label:'gemini-3-flash-preview', provider:'gemini', priority:1 },
+  { id:'gemini-2.5-flash', label:'Gemini 2.5 Flash', provider:'gemini', priority:2 },
+  { id:'gpt-4o-mini',      label:'GPT-4o Mini',      provider:'openai', priority:3 }
+];
+
+let modelStatus = MODEL_CHAIN.map(m => ({...m, status:'idle'}));
+
+function paparModel() {
+  document.getElementById('senaraiModel').innerHTML = modelStatus.map(m => {
+    let badge = '';
+    if(m.status === 'ok') badge = '<span class="model-tag model-ok">✓ Berjaya</span>';
+    else if(m.status === 'fail') badge = '<span class="model-tag model-fail">✗ Gagal</span>';
+    else if(m.status === 'trying') badge = '<span class="model-tag model-trying">⏳ Mencuba</span>';
+    else badge = '<span class="model-tag" style="background:#e5e7eb;color:#6b7280;">⊙ Sedia</span>';
+    return `<div class="flex items-center justify-between"><span><b>#${m.priority}</b> ${m.label} <span class="text-gray-500">(${m.provider})</span></span> ${badge}</div>`;
+  }).join('');
+}
+
+//==========================================================
+// STATE
+//==========================================================
+let sesiList = [];
+
+function setStep(n) {
+  ['s1','s2','s3','s4'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.className = 'w-8 h-8 rounded-full flex items-center justify-center font-bold ';
+    if(i+1 < n) el.className += 'step-done';
+    else if(i+1 === n) el.className += 'step-active';
+    else el.className += 'step-pending';
+  });
+}
+
+//==========================================================
+// SETTINGS
+//==========================================================
+function muatTetapan() {
+  const t = JSON.parse(localStorage.getItem('erphTetapanV31') || '{}');
+  if(t.geminiKey) document.getElementById('geminiKey').value = t.geminiKey;
+  if(t.openaiKey) document.getElementById('openaiKey').value = t.openaiKey;
+  if(t.profil5I) document.getElementById('profil5I').value = t.profil5I;
+  if(t.profil5H) document.getElementById('profil5H').value = t.profil5H;
+  if(t.namaGuru) document.getElementById('namaGuru').value = t.namaGuru;
+  if(t.delayBetween) document.getElementById('delayBetween').value = t.delayBetween;
+  if(t.maxRetry) document.getElementById('maxRetry').value = t.maxRetry;
+}
+function simpanTetapan() {
+  localStorage.setItem('erphTetapanV31', JSON.stringify({
+    geminiKey: document.getElementById('geminiKey').value,
+    openaiKey: document.getElementById('openaiKey').value,
+    profil5I: document.getElementById('profil5I').value,
+    profil5H: document.getElementById('profil5H').value,
+    namaGuru: document.getElementById('namaGuru').value,
+    delayBetween: document.getElementById('delayBetween').value,
+    maxRetry: document.getElementById('maxRetry').value
+  }));
+}
+
+//==========================================================
+// FILE UPLOAD
+//==========================================================
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('dragover');
+  if(e.dataTransfer.files.length) prosesFail(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+  if(e.target.files.length) prosesFail(e.target.files[0]);
+});
+
+async function prosesFail(file) {
+  document.getElementById('fileName').textContent = file.name;
+  try {
+    let teks = '';
+    if(file.name.endsWith('.docx')) {
+      const buf = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({arrayBuffer: buf});
+      teks = result.value;
+    } else {
+      teks = await file.text();
+    }
+    sesiList = parseKandungan(teks);
+    document.getElementById('bilSesi').textContent = sesiList.length;
+    document.getElementById('fileInfo').classList.remove('hidden');
+    if(sesiList.length === 0) {
+      alert('⚠️ Tiada sesi dikesan. Pastikan format dokumen ada heading "KELAS 5X HARI..."');
+      return;
+    }
+    document.getElementById('seksyenPemerhatian').classList.remove('hidden');
+    document.getElementById('seksyenJana').classList.remove('hidden');
+    setStep(2);
+    document.getElementById('seksyenPemerhatian').scrollIntoView({behavior:'smooth'});
+  } catch(e) {
+    alert('Ralat: ' + e.message);
+  }
+}
+
+//==========================================================
+// PARSER
+//==========================================================
+function parseKandungan(teks) {
+  const blok = teks.split(/(?=(?:KELAS|Kelas)\s*5[A-Z]\s*(?:HARI|Hari))/i)
+    .filter(b => b.trim().length > 50);
+  let blokFinal = blok;
+  if(blok.length <= 1) {
+    blokFinal = teks.split(/(?:^|\n)(?:---+|##\s*Document|##\s*Dokumen)/i)
+      .filter(b => b.trim().length > 50);
+  }
+  return blokFinal.map((b,i) => parseSesi(b,i)).filter(s => s.kelas);
+}
+
+function parseSesi(teks, idx) {
+  const ambil = (regex) => {
+    const m = teks.match(regex);
+    return m ? m[1].trim().replace(/\*\*/g,'').replace(/^\|+|\|+$/g,'').trim() : '';
+  };
+  const kelasMatch = teks.match(/KELAS\s*[:\|]?\s*(5[A-Z])/i) || teks.match(/Kelas\s*(5[A-Z])/i);
+  const hariMatch = teks.match(/HARI\s*[:\|]?\s*(ISNIN|SELASA|RABU|KHAMIS|JUMAAT|Isnin|Selasa|Rabu|Khamis|Jumaat)/i);
+  
+  return {
+    id: idx,
+    kelas: kelasMatch ? kelasMatch[1].toUpperCase() : '',
+    hari: hariMatch ? hariMatch[1].toUpperCase() : '',
+    masa: ambil(/MASA\s*[:\|]+\s*([^\n\|]+)/i),
+    tarikh: ambil(/TARIKH\s*[:\|]+\s*([^\n\|]+)/i),
+    tema: ambil(/TEMA\s*[:\|]+\s*([^\n\|]+)/i),
+    kemahiran: ambil(/KEMAHIRAN\s*[:\|]+\s*([^\n\|]+)/i),
+    tajuk: ambil(/TAJUK\s*[:\|]+\s*([^\n\|]+)/i),
+    standardKandungan: ambil(/STANDARD\s+KANDUNGAN[:\s\|]*\n?([\s\S]*?)(?=STANDARD\s+PEMBELAJARAN|OBJEKTIF|$)/i),
+    standardPembelajaran: ambil(/STANDARD\s+PEMBELAJARAN[:\s\|]*\n?([\s\S]*?)(?=OBJEKTIF|KRITERIA|$)/i),
+    objektif: ambil(/OBJEKTIF\s+PEMBELAJARAN[:\s]*\n?([\s\S]*?)(?=KRITERIA|$)/i),
+    kriteria: ambil(/KRITERIA\s+KEJAYAAN[:\s]*\n?([\s\S]*?)(?=AKTIVITI|SET\s+INDUKSI|STRATEGI|$)/i),
+    setInduksi: ekstrakSenarai(teks, /SET\s+INDUKSI[:\s]*\n?([\s\S]*?)(?=PERKEMBANGAN|$)/i),
+    perkembangan: ekstrakSenarai(teks, /PERKEMBANGAN[:\s]*\n?([\s\S]*?)(?=PENUTUP|$)/i),
+    penutup: ekstrakSenarai(teks, /PENUTUP[:\s]*\n?([\s\S]*?)(?=STRATEGI|$)/i),
+    strategi: ambil(/STRATEGI\s+PENGAJARAN[\s\S]*?\n([^\n#]+)/i) || 'Pembelajaran Akses Kendiri',
+    kbat: ambil(/KBAT[\s\|]*([^\n\|]+)/i) || 'Mengaplikasi',
+    sistemBahasa: ambil(/SISTEM\s+BAHASA[\s\|]*([^\n\|]+)/i) || '-',
+    kosaKata: ambil(/Kosa\s*kata[\s\|]*([^\n\|]+)/i) || '-',
+    bbm: 'Projektor LCD, Power Point',
+    refleksiKekuatan:'', refleksiKelemahan:'', refleksiTindakan:'',
+    ralat: ''
+  };
+}
+
+function ekstrakSenarai(teks, regex) {
+  const m = teks.match(regex);
+  if(!m) return [];
+  return m[1].split(/\n/)
+    .map(l => l.replace(/^\s*\d+\.\s*/,'').replace(/^\s*[-•]\s*/,'').trim())
+    .filter(l => l.length > 5);
+}
+
+//==========================================================
+// AI - PROMPT (berdasarkan SK, SP, OP, KK, Profil, Pemerhatian)
+//==========================================================
+function buatPrompt(sesi) {
+  const profil = sesi.kelas === '5I' 
+    ? document.getElementById('profil5I').value 
+    : document.getElementById('profil5H').value;
+  const pemerhatianUmum = document.getElementById('pemerhatianUmum').value;
+  
+  return `Anda guru pakar Bahasa  Melayu Tingkatan 5 dan SPM. Jana refleksi PdP untuk SATU kelas sahaja (${sesi.kelas}) dalam Bahasa Melayu formal.
+
+Maklumat PdP:
+- Kelas: ${sesi.kelas}
+- Tajuk: ${sesi.tajuk}
+- Kemahiran: ${sesi.kemahiran}
+- Standard Pembelajaran: ${sesi.standardPembelajaran}
+- Kriteria Kejayaan: ${sesi.kriteria}
+
+Profil kelas ${sesi.kelas}: ${profil}
+
+Pemerhatian guru minggu ini: ${pemerhatianUmum || '(tiada)'}
+
+Hasilkan refleksi 3 bahagian (2-3 ayat setiap satu):
+1. Kekuatan murid (kaitkan dengan Standard Pembelajaran yang dikuasai)
+2. Kelemahan murid (kaitkan dengan profil kelas & pemerhatian guru)
+3. Tindakan susulan (cadangan praktikal)
+
+Gunakan istilah pedagogi KPM (PAK21, PBD, KBAT, pendekatan terbeza).
+
+Pulangkan SATU OBJEK JSON RATA sahaja:
+{"kekuatan":"...","kelemahan":"...","tindakan":"..."}`;
+}
+
+
+//==========================================================
+// FIX v3.2: Parser JSON pintar - tangani array, nested, & object rata
+//==========================================================
+function parseJSONSelamat(teks) {
+  let bersih = (teks || '').trim()
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '');
+  
+  // Cari sama ada JSON object atau array yang sah
+  const matchObj = bersih.match(/\{[\s\S]*\}/);
+  const matchArr = bersih.match(/$$[\s\S]*$$/);
+  
+  // Pilih yang lebih panjang (lebih lengkap)
+  if(matchArr && (!matchObj || matchArr[0].length > matchObj[0].length)) {
+    bersih = matchArr[0];
+  } else if(matchObj) {
+    bersih = matchObj[0];
+  }
+  
+  let data;
+  try {
+    data = JSON.parse(bersih);
+  } catch(e) {
+    throw new Error(`JSON tidak boleh di-parse: ${(teks||'').substring(0,100)}...`);
+  }
+  
+  // KES 1: Array - ambil objek pertama yang ada keys yang diperlukan
+  if(Array.isArray(data)) {
+    for(const item of data) {
+      const hasil = ekstrakRefleksi(item);
+      if(hasil) return hasil;
+    }
+    throw new Error('Array tidak mengandungi refleksi yang sah');
+  }
+  
+  // KES 2: Object rata atau bersarang
+  const hasil = ekstrakRefleksi(data);
+  if(hasil) return hasil;
+  
+  // KES 3: Object bersarang (cth: { "refleksi_5I": { kekuatan, ... } })
+  for(const key in data) {
+    if(typeof data[key] === 'object' && data[key] !== null) {
+      const dalaman = ekstrakRefleksi(data[key]);
+      if(dalaman) return dalaman;
+    }
+  }
+  
+  throw new Error('Struktur JSON tidak mengandungi kekuatan/kelemahan/tindakan');
+}
+
+//==========================================================
+// FIX v3.2: Helper - cari & normalisasi keys
+//==========================================================
+function ekstrakRefleksi(obj) {
+  if(!obj || typeof obj !== 'object') return null;
+  
+  // Cari keys dengan variasi nama (case-insensitive, dengan/tanpa underscore)
+  const cariKey = (namaKey) => {
+    const variasi = [
+      namaKey,
+      namaKey.toUpperCase(),
+      namaKey.charAt(0).toUpperCase() + namaKey.slice(1),
+      namaKey + '_susulan',
+      'tindakan_susulan'
+    ];
+    for(const v of variasi) {
+      if(obj[v] !== undefined && typeof obj[v] === 'string' && obj[v].length > 10) {
+        return obj[v];
+      }
+    }
+    // Cari secara fuzzy
+    for(const k in obj) {
+      if(k.toLowerCase().includes(namaKey.toLowerCase()) && 
+         typeof obj[k] === 'string' && obj[k].length > 10) {
+        return obj[k];
+      }
+    }
+    return null;
+  };
+  
+  const kekuatan = cariKey('kekuatan');
+  const kelemahan = cariKey('kelemahan');
+  const tindakan = cariKey('tindakan');
+  
+  if(kekuatan && kelemahan && tindakan) {
+    return { kekuatan, kelemahan, tindakan };
+  }
+  return null;
+}
+
+//==========================================================
+// FIX v3.2: Prompt yang lebih tegas - elak format pelbagai
+//==========================================================
+function buatPrompt(sesi) {
+  const profil = sesi.kelas === '5I' 
+    ? document.getElementById('profil5I').value 
+    : document.getElementById('profil5H').value;
+  const pemerhatianUmum = document.getElementById('pemerhatianUmum').value;
+  
+  return `Anda ialah guru pakar Bahasa Melayu KSSR Tahap 2 di Malaysia. Hasilkan refleksi PdP rasmi dalam Bahasa Melayu formal yang mematuhi SKPMg2 Standard 4.
+
+=== KONTEKS ===
+PROFIL KELAS ${sesi.kelas}:
+${profil}
+
+PEMERHATIAN UMUM GURU MINGGU INI:
+${pemerhatianUmum || '(tiada pemerhatian khusus)'}
+
+=== ASAS PEDAGOGI (RUJUKAN UTAMA) ===
+STANDARD KANDUNGAN: ${sesi.standardKandungan}
+STANDARD PEMBELAJARAN: ${sesi.standardPembelajaran}
+OBJEKTIF PEMBELAJARAN: ${sesi.objektif}
+KRITERIA KEJAYAAN: ${sesi.kriteria}
+TAJUK: ${sesi.tajuk}
+KEMAHIRAN: ${sesi.kemahiran}
+
+=== ARAHAN ===
+Hasilkan refleksi UNTUK SATU KELAS SAHAJA (kelas ${sesi.kelas}):
+1. KEKUATAN: aspek STANDARD PEMBELAJARAN yang dikuasai murid (2-3 ayat)
+2. KELEMAHAN: aspek STANDARD PEMBELAJARAN/KRITERIA KEJAYAAN yang tidak tercapai (2-3 ayat)
+3. TINDAKAN: cadangan praktikal untuk PdP akan datang (2-3 ayat)
+
+Gunakan istilah pedagogi KPM (PAK21, PBD, KBAT, pendekatan terbeza, scaffolding).
+
+=== FORMAT OUTPUT (WAJIB DIPATUHI) ===
+Pulangkan SATU OBJEK JSON RATA SAHAJA dengan TIGA kunci ini:
+- "kekuatan" (string)
+- "kelemahan" (string)
+- "tindakan" (string)
+
+JANGAN gunakan array [].
+JANGAN gunakan objek bersarang seperti {"refleksi_5I": {...}}.
+JANGAN tambah kunci lain seperti "kelas".
+
+Contoh format yang BETUL:
+{"kekuatan":"...","kelemahan":"...","tindakan":"..."}
+
+Pulangkan JSON sahaja, tanpa teks lain.`;
+}
+
+
+//==========================================================
+// PATCH v3.1: AI CALL DENGAN RETRY & RATE-LIMIT HANDLING
+//==========================================================
+async function panggilModel(model, prompt, cubaan = 1) {
+  const geminiKey = document.getElementById('geminiKey').value.trim();
+  const openaiKey = document.getElementById('openaiKey').value.trim();
+  const maxRetry = parseInt(document.getElementById('maxRetry').value) || 3;
+  
+  if(model.provider === 'gemini') {
+    if(!geminiKey) throw new Error('Tiada Gemini API Key');
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${geminiKey}`;
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{parts:[{text:prompt}]}],
+        generationConfig:{
+          temperature:0.75, 
+          responseMimeType:'application/json',
+          maxOutputTokens: 1024
+        }
+      })
+    });
+    
+    if(res.status === 429 || res.status === 503) {
+      if(cubaan < maxRetry) {
+        const delay = cubaan * 5000;
+        console.log(`[${model.label}] Rate limit (${res.status}). Menunggu ${delay/1000}s sebelum cuba semula (cubaan ${cubaan+1}/${maxRetry})...`);
+        await new Promise(r => setTimeout(r, delay));
+        return panggilModel(model, prompt, cubaan + 1);
+      }
+      throw new Error(`Rate limit selepas ${cubaan} cubaan (HTTP ${res.status})`);
+    }
+    
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    
+    const teks = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!teks) throw new Error('Respons kosong dari Gemini');
+    
+    return parseJSONSelamat(teks);
+    
+  } else {
+    if(!openaiKey) throw new Error('Tiada OpenAI API Key');
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${openaiKey}`},
+      body: JSON.stringify({
+        model: model.id,
+        messages:[{role:'user',content:prompt}],
+        response_format:{type:'json_object'},
+        temperature:0.75
+      })
+    });
+    
+    if((res.status === 429 || res.status === 503) && cubaan < maxRetry) {
+      const delay = cubaan * 5000;
+      console.log(`[${model.label}] Rate limit. Menunggu ${delay/1000}s...`);
+      await new Promise(r => setTimeout(r, delay));
+      return panggilModel(model, prompt, cubaan + 1);
+    }
+    
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    return parseJSONSelamat(data.choices[0].message.content);
+  }
+}
+
+async function panggilAIDenganFallback(prompt) {
+  const errors = [];
+  for(let i=0; i<modelStatus.length; i++) {
+    const m = modelStatus[i];
+    if(m.provider === 'gemini' && !document.getElementById('geminiKey').value.trim()) {
+      m.status = 'fail';
+      paparModel();
+      continue;
+    }
+    if(m.provider === 'openai' && !document.getElementById('openaiKey').value.trim()) {
+      m.status = 'fail';
+      paparModel();
+      continue;
+    }
+    
+    m.status = 'trying';
+    paparModel();
+    try {
+      const hasil = await panggilModel(m, prompt);
+      m.status = 'ok';
+      paparModel();
+      return { hasil, modelDigunakan: m.label };
+    } catch(e) {
+      m.status = 'fail';
+      paparModel();
+      errors.push(`${m.label}: ${e.message}`);
+      console.warn(`Model ${m.label} gagal:`, e.message);
+    }
+  }
+  throw new Error('Semua model gagal:\n' + errors.join('\n'));
+}
+
+//==========================================================
+// PATCH v3.1: JANA SEMUA - dengan delay & teruskan loop
+//==========================================================
+async function janaSemua() {
+  if(sesiList.length === 0) { alert('Tiada sesi'); return; }
+  if(!document.getElementById('geminiKey').value.trim() && !document.getElementById('openaiKey').value.trim()) {
+    alert('Sila masukkan sekurang-kurangnya satu API Key');
+    return;
+  }
+  simpanTetapan();
+  document.getElementById('btnJana').disabled = true;
+  document.getElementById('btnJana').textContent = '⏳ Memproses...';
+  
+  const delayBetween = (parseInt(document.getElementById('delayBetween').value) || 4) * 1000;
+  const sesiGagal = [];
+  let bilSkip = 0;
+  
+  for(let i=0; i<sesiList.length; i++) {
+    const s = sesiList[i];
+    
+    if(s.refleksiKekuatan && s.refleksiKekuatan.length > 20) {
+      bilSkip++;
+      continue;
+    }
+    
+    setStatus(`<span class="loader"></span> Sesi ${i+1}/${sesiList.length}: ${s.kelas} ${s.hari} - ${s.tajuk}`, 'biru');
+    
+    modelStatus.forEach(m => m.status = 'idle');
+    paparModel();
+    
+    try {
+      const {hasil, modelDigunakan} = await panggilAIDenganFallback(buatPrompt(s));
+      s.refleksiKekuatan = hasil.kekuatan;
+      s.refleksiKelemahan = hasil.kelemahan;
+      s.refleksiTindakan = hasil.tindakan;
+      s.modelDigunakan = modelDigunakan;
+      s.ralat = '';
+      paparRefleksi();
+    } catch(e) {
+      console.error(`Sesi ${i+1} gagal:`, e);
+      s.ralat = e.message;
+      sesiGagal.push({index: i+1, kelas: s.kelas, hari: s.hari, ralat: e.message});
+      paparRefleksi();
+    }
+    
+    if(i < sesiList.length - 1 && delayBetween > 0) {
+      setStatus(`⏸️ Menunggu ${delayBetween/1000} saat sebelum sesi seterusnya...`, 'biru');
+      await new Promise(r => setTimeout(r, delayBetween));
+    }
+  }
+  
+  document.getElementById('btnJana').disabled = false;
+  document.getElementById('btnJana').textContent = '🔄 Jana Semula Semua';
+  
+  if(sesiGagal.length === 0) {
+    const berjaya = sesiList.length - bilSkip;
+    setStatus(`✅ Semua refleksi berjaya! (${berjaya} dijana baharu, ${bilSkip} dilangkau kerana sudah ada)`, 'hijau');
+    const btnGagal = document.getElementById('btnJanaGagal');
+    if(btnGagal) btnGagal.remove();
+  } else {
+    const senaraiGagal = sesiGagal.map(g => `• Sesi ${g.index} (${g.kelas} ${g.hari}): ${g.ralat}`).join('<br>');
+    setStatus(`⚠️ ${sesiList.length - sesiGagal.length}/${sesiList.length} berjaya. <b>${sesiGagal.length} gagal:</b><br>${senaraiGagal}<br><br><b>Klik butang oren di bawah untuk cuba semula sesi yang gagal sahaja.</b>`, 'merah');
+    
+    if(!document.getElementById('btnJanaGagal')) {
+      const btn = document.createElement('button');
+      btn.id = 'btnJanaGagal';
+      btn.className = 'mt-3 w-full bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-bold';
+      btn.textContent = '🔁 Jana Sesi yang Gagal Sahaja';
+      btn.onclick = janaSemua;
+      document.getElementById('btnJana').parentNode.insertBefore(btn, document.getElementById('btnJana').nextSibling);
+    }
+  }
+  
+  document.getElementById('seksyenMuatTurun').classList.remove('hidden');
+  setStep(4);
+}
+
+function paparRefleksi() {
+  const div = document.getElementById('senaraiRefleksi');
+  div.innerHTML = sesiList.map((s,i) => {
+    const adaRefleksi = s.refleksiKekuatan && s.refleksiKekuatan.length > 20;
+    const adaRalat = s.ralat && s.ralat.length > 0;
+    
+    let statusBadge = '';
+    if(adaRefleksi) statusBadge = '<span class="model-tag model-ok">✓ Siap</span>';
+    else if(adaRalat) statusBadge = '<span class="model-tag model-fail">✗ Gagal</span>';
+    else statusBadge = '<span class="model-tag" style="background:#e5e7eb;color:#6b7280;">⊙ Belum</span>';
+    
+    const blokRalat = (adaRalat && !adaRefleksi) 
+      ? `<div class="text-xs text-red-600 bg-red-50 p-2 rounded mb-2">⚠️ ${s.ralat}</div>` 
+      : '';
+    
+    const blokRefleksi = adaRefleksi ? `
+        <div class="text-xs space-y-1">
+          <div><b class="text-green-700">Kekuatan:</b> <textarea onchange="sesiList[${i}].refleksiKekuatan=this.value" class="w-full border rounded p-1 mt-1" rows="2">${s.refleksiKekuatan}</textarea></div>
+          <div><b class="text-red-700">Kelemahan:</b> <textarea onchange="sesiList[${i}].refleksiKelemahan=this.value" class="w-full border rounded p-1 mt-1" rows="2">${s.refleksiKelemahan}</textarea></div>
+          <div><b class="text-blue-700">Tindakan:</b> <textarea onchange="sesiList[${i}].refleksiTindakan=this.value" class="w-full border rounded p-1 mt-1" rows="2">${s.refleksiTindakan}</textarea></div>
+        </div>` : '';
+    
+    return `
+    <div class="border-l-4 ${s.kelas==='5I'?'border-blue-500':'border-amber-500'} bg-gray-50 rounded p-3">
+      <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <span class="badge-${s.kelas} px-2 py-0.5 rounded text-xs font-bold">${s.kelas}</span>
+        <span class="font-semibold text-sm">${s.hari} - ${s.tajuk}</span>
+        ${statusBadge}
+        ${s.modelDigunakan ? `<span class="text-xs text-gray-500">[${s.modelDigunakan}]</span>` : ''}
+      </div>
+      ${blokRalat}
+      ${blokRefleksi}
+    </div>`;
+  }).join('');
+}
+
+function setStatus(msg, warna) {
+  const peta = {biru:'text-blue-600', hijau:'text-green-600', merah:'text-red-600'};
+  document.getElementById('status').className = `mt-3 text-sm ${peta[warna]}`;
+  document.getElementById('status').innerHTML = msg;
+}
+
+//==========================================================
+// PENJANA RPH FORMAT RASMI (1 muka surat)
+//==========================================================
+function janaRPHRasmi(s) {
+  const induksi = s.setInduksi.length ? s.setInduksi : [
+    'Guru mengimbas pengetahuan sedia ada murid dan merangsang minat serta perhatian mereka terhadap tajuk yang bakal dipelajari',
+    'Sumbang saran antara guru dan murid',
+    'Murid membuat perkaitan antara objektif pembelajaran dan kriteria kejayaan dengan Sub-topik'
+  ];
+  const perkembangan = s.perkembangan.length ? s.perkembangan : [
+    'Guru memberikan taklimat aktiviti',
+    `Murid menjalankan aktiviti utama berkaitan ${s.tajuk}`,
+    'Aktiviti mengaplikasi teknik dan kemahiran',
+    'Aktiviti menjawab soalan pada buku kerja',
+    'Guru melaksanakan Pentaksiran Bilik Darjah (PBD)'
+  ];
+  const penutup = s.penutup.length ? s.penutup : [
+    'Perbincangan nilai murni',
+    'Kesimpulan tajuk dinyatakan oleh beberapa orang murid secara rawak'
+  ];
+
+  // Format refleksi - setiap bahagian sebagai perenggan berasingan
+  const refleksiKekuatan = s.refleksiKekuatan || '<i style="color:#999;">(belum dijana)</i>';
+  const refleksiKelemahan = s.refleksiKelemahan || '<i style="color:#999;">(belum dijana)</i>';
+  const refleksiTindakan = s.refleksiTindakan || '<i style="color:#999;">(belum dijana)</i>';
+
+  return `
+<div class="rph-page">
+  <table class="rph-table">
+    <tr><td colspan="4" class="rph-header" style="background:#d1d5db;">RANCANGAN PENGAJARAN HARIAN BAHASA MELAYU</td></tr>
+    <tr>
+      <td class="rph-label">KELAS</td><td>${s.kelas}</td>
+      <td class="rph-label" style="width:18%;">HARI</td><td>${s.hari}</td>
+    </tr>
+    <tr>
+      <td class="rph-label">MASA</td><td>${s.masa}</td>
+      <td class="rph-label">TARIKH</td><td>${s.tarikh}</td>
+    </tr>
+    <tr><td class="rph-label">TEMA</td><td colspan="3">${s.tema}</td></tr>
+    <tr><td class="rph-label">KEMAHIRAN</td><td colspan="3">${s.kemahiran}</td></tr>
+    <tr><td class="rph-label">TAJUK</td><td colspan="3">${s.tajuk}</td></tr>
+    <tr><td class="rph-label">STANDARD KANDUNGAN</td><td colspan="3">${s.standardKandungan}</td></tr>
+    <tr><td class="rph-label">STANDARD PEMBELAJARAN</td><td colspan="3">${s.standardPembelajaran}</td></tr>
+    <tr><td class="rph-label">OBJEKTIF PEMBELAJARAN</td><td colspan="3">Pada akhir pembelajaran murid dapat:<br>${formatNombor(s.objektif)}</td></tr>
+    <tr><td class="rph-label">KRITERIA KEJAYAAN</td><td colspan="3">Pada akhir pembelajaran murid mencapai objektif pembelajaran sekiranya:<br>${formatNombor(s.kriteria)}</td></tr>
+    <tr><td colspan="4" class="rph-header">AKTIVITI</td></tr>
+    <tr><td class="rph-label">SET INDUKSI</td><td colspan="3">${induksi.map((a,i)=>`${i+1}. ${a}`).join('<br>')}</td></tr>
+    <tr><td class="rph-label">PERKEMBANGAN</td><td colspan="3">${perkembangan.map((a,i)=>`${i+1}. ${a}`).join('<br>')}</td></tr>
+    <tr><td class="rph-label">PENUTUP</td><td colspan="3">${penutup.map((a,i)=>`${i+1}. ${a}`).join('<br>')}</td></tr>
+    <tr><td class="rph-label">STRATEGI PENGAJARAN DAN PEMBELAJARAN</td><td colspan="3">${s.strategi}</td></tr>
+    <tr><td colspan="4" class="rph-header">PENERAPAN</td></tr>
+    <tr>
+      <td class="rph-label">KBAT</td><td>${s.kbat}</td>
+      <td class="rph-label">SISTEM BAHASA</td><td>${s.sistemBahasa}</td>
+    </tr>
+    <tr><td class="rph-label">BBM</td><td colspan="3">${s.bbm}</td></tr>
+    <tr>
+      <td class="rph-label">IMPAK/REFLEKSI</td>
+      <td colspan="3" class="rph-refleksi">
+        <p><b>Kekuatan:</b> ${refleksiKekuatan}</p>
+        <p><b>Kelemahan:</b> ${refleksiKelemahan}</p>
+        <p><b>Tindakan Susulan:</b> ${refleksiTindakan}</p>
+      </td>
+    </tr>
+  </table>
+</div>`;
+}
+
+function formatNombor(teks) {
+  if(!teks) return '';
+  const baris = teks.split(/\n/).map(l => l.replace(/^\s*\d+\.\s*/,'').replace(/^Pada akhir.*?:\s*/i,'').trim()).filter(l => l.length > 3);
+  if(baris.length === 0) return teks;
+  return baris.map((b,i)=>`${i+1}. ${b}`).join('<br>');
+}
+
+function janaSemuaRPH() {
+  return sesiList.map(s => janaRPHRasmi(s)).join('');
+}
+
+//==========================================================
+// EKSPORT WORD
+//==========================================================
+function muatTurunDocx() {
+  const namaFail = `eRPH_${formatTarikhFail()}.doc`;
+  const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'><title>eRPH</title>
+<xml>
+<w:WordDocument>
+<w:View>Print</w:View>
+<w:Zoom>100</w:Zoom>
+<w:DoNotOptimizeForBrowser/>
+</w:WordDocument>
+</xml>
+<style>
+@page { 
+  size: A4 portrait; 
+  margin: 0.8cm 1cm 0.8cm 1cm;
+  mso-page-orientation: portrait;
+}
+body { 
+  font-family: Arial, sans-serif; 
+  font-size: 9.5pt; 
+  line-height: 1.2;
+}
+table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  page-break-inside: avoid !important;
+  mso-table-layout-alt: fixed;
+}
+tr { 
+  page-break-inside: avoid !important;
+}
+td { 
+  border: 1px solid #000; 
+  padding: 3px 5px; 
+  vertical-align: top;
+  page-break-inside: avoid !important;
+}
+.rph-header { 
+  background: #d1d5db; 
+  font-weight: bold; 
+  text-align: center; 
+}
+.rph-label { 
+  background: #f3f4f6; 
+  font-weight: bold; 
+}
+.rph-refleksi { 
+  font-size: 10pt; 
+}
+.rph-refleksi p { 
+  margin: 0 0 6pt 0; 
+  text-align: justify;
+  mso-margin-top-alt: auto;
+  mso-margin-bottom-alt: 6pt;
+}
+.rph-page { 
+  page-break-after: always;
+  page-break-inside: avoid;
+}
+.rph-page:last-child { 
+  page-break-after: auto; 
+}
+.page-break {
+  page-break-before: always;
+  mso-special-character: line-break;
+}
+</style>
+</head>
+<body>${janaSemuaRPHUntukDocx()}</body></html>`;
+  
+  const blob = new Blob(['\ufeff', html], {type:'application/msword'});
+  saveAs(blob, namaFail);
+  setStatus(`✅ "${namaFail}" dimuat turun (1 RPH = 1 muka surat)`, 'hijau');
+}
+
+// Fungsi khusus untuk DOCX - paksa page break antara setiap RPH
+function janaSemuaRPHUntukDocx() {
+  return sesiList.map((s, idx) => {
+    const html = janaRPHRasmi(s);
+    // Tambah page-break paksa selepas setiap RPH (kecuali yang terakhir)
+    if(idx < sesiList.length - 1) {
+      return html + '<br clear="all" style="mso-special-character:line-break;page-break-before:always;">';
+    }
+    return html;
+  }).join('');
+}
+
+
+//==========================================================
+// EKSPORT PDF
+//==========================================================
+function muatTurunPDF() {
+  const namaFail = `eRPH_${formatTarikhFail()}.pdf`;
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = janaSemuaRPH();
+  wrapper.querySelectorAll('.rph-table').forEach(t => {
+    t.style.cssText = 'width:100%; border-collapse:collapse; font-family:Arial; font-size:9.5pt;';
+  });
+  wrapper.querySelectorAll('.rph-table td').forEach(td => {
+    td.style.cssText += '; border:1px solid #000; padding:3px 5px; vertical-align:top;';
+  });
+  wrapper.querySelectorAll('.rph-header').forEach(td => {
+    td.style.cssText += '; background:#d1d5db; font-weight:bold; text-align:center;';
+  });
+  wrapper.querySelectorAll('.rph-label').forEach(td => {
+    td.style.cssText += '; background:#f3f4f6; font-weight:bold;';
+  });
+  wrapper.querySelectorAll('.rph-refleksi').forEach(td => {
+    td.style.fontSize = '10pt';
+  });
+  
+  setStatus(`<span class="loader"></span> Menjana PDF...`, 'biru');
+  
+  html2pdf().set({
+    margin: [8,8,8,8],
+    filename: namaFail,
+    image: {type:'jpeg', quality:0.98},
+    html2canvas: {scale:2, useCORS:true},
+    jsPDF: {unit:'mm', format:'a4', orientation:'portrait'},
+    pagebreak: {mode:['css','legacy'], before:'.rph-page'}
+  }).from(wrapper).save().then(() => {
+    setStatus(`✅ "${namaFail}" dimuat turun`, 'hijau');
+  });
+}
+
+function formatTarikhFail() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}${String(d.getMonth()+1).padStart(2,'0')}${d.getFullYear()}`;
+}
+
+//==========================================================
+// PRATONTON
+//==========================================================
+function togglePratonton() {
+  const p = document.getElementById('pratonton');
+  if(p.classList.contains('hidden')) {
+    p.innerHTML = janaSemuaRPH();
+    p.classList.remove('hidden');
+  } else {
+    p.classList.add('hidden');
+  }
+}
+
+//==========================================================
+// INIT
+//==========================================================
+muatTetapan();
+paparModel();
+['geminiKey','openaiKey','profil5I','profil5H','namaGuru','delayBetween','maxRetry'].forEach(id => {
+  document.getElementById(id).addEventListener('change', simpanTetapan);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,844 @@
+<!-- File: pemeriksa_bm_v4.html -->
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pemeriksa Karangan BM SPM v4.0</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    min-height: 100vh; padding: 20px; color: #333;
+  }
+  .container { max-width: 950px; margin: 0 auto; }
+  header {
+    background: white; padding: 18px 25px; border-radius: 12px;
+    margin-bottom: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+  header h1 { color: #1e3c72; font-size: 22px; }
+  header p { color: #666; font-size: 13px; margin-top: 3px; }
+  .step {
+    background: white; padding: 22px 25px; border-radius: 12px;
+    margin-bottom: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    position: relative;
+  }
+  .step-num {
+    position: absolute; top: -14px; left: 20px;
+    background: #1e3c72; color: white; width: 36px; height: 36px;
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-weight: bold; font-size: 16px;
+  }
+  .step h2 {
+    color: #1e3c72; font-size: 17px; margin-bottom: 12px;
+    padding-left: 28px; display: flex; align-items: center; gap: 10px;
+  }
+  .badge {
+    padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: bold;
+  }
+  .badge-ok { background: #d4edda; color: #155724; }
+  .badge-no { background: #fff3cd; color: #856404; }
+  input, textarea, select {
+    width: 100%; padding: 10px; border: 1px solid #ced4da;
+    border-radius: 6px; font-size: 14px; font-family: inherit;
+  }
+  textarea { resize: vertical; }
+  label {
+    display: block; margin-bottom: 5px; font-weight: 600;
+    font-size: 13px; color: #495057;
+  }
+  button {
+    background: #1e3c72; color: white; padding: 10px 18px;
+    border: none; border-radius: 6px; font-weight: 600;
+    cursor: pointer; font-size: 14px;
+  }
+  button:hover { background: #2a5298; }
+  button:disabled { background: #adb5bd; cursor: not-allowed; }
+  .btn-go {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    padding: 16px 30px; font-size: 17px; width: 100%;
+  }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-warn { background: #ffc107; color: #333; }
+  .btn-red { background: #dc3545; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+
+  .paste-zone {
+    border: 3px dashed #1e3c72; border-radius: 10px;
+    padding: 40px 20px; text-align: center; background: #f8f9fa;
+    cursor: pointer; transition: 0.2s; min-height: 150px;
+  }
+  .paste-zone:hover, .paste-zone:focus { background: #e3f2fd; outline: none; }
+  .paste-zone.dragover { background: #cce5ff; border-color: #0d6efd; }
+  .paste-zone .big { font-size: 18px; color: #1e3c72; font-weight: 600; }
+  .paste-zone .small { font-size: 12px; color: #666; margin-top: 8px; }
+
+  .img-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px; margin-top: 15px;
+  }
+  .img-card {
+    position: relative; border: 2px solid #1e3c72; border-radius: 8px;
+    overflow: hidden; background: white;
+  }
+  .img-card img { width: 100%; height: 180px; object-fit: cover; display: block; }
+  .img-card .num {
+    position: absolute; top: 5px; left: 5px;
+    background: #1e3c72; color: white; width: 26px; height: 26px;
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 12px; font-weight: bold;
+  }
+  .img-card .del {
+    position: absolute; top: 5px; right: 5px;
+    background: #dc3545; color: white; border: none;
+    width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+    font-size: 14px;
+  }
+
+  .alert { padding: 10px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; }
+  .alert-info { background: #d1ecf1; color: #0c5460; }
+  .alert-warn { background: #fff3cd; color: #856404; }
+  .alert-ok { background: #d4edda; color: #155724; }
+  .alert-err { background: #f8d7da; color: #721c24; }
+
+  .result-box {
+    background: white; padding: 25px; border-radius: 12px;
+    margin-top: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    display: none;
+  }
+  .markah-besar {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white; padding: 20px; border-radius: 10px;
+    text-align: center; margin-bottom: 15px;
+  }
+  .markah-besar .num { font-size: 42px; font-weight: bold; }
+  .markah-besar .lbl { font-size: 14px; opacity: 0.9; margin-top: 5px; }
+
+  .komp-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  .komp-table th, .komp-table td {
+    padding: 10px; text-align: left; border-bottom: 1px solid #e0e6ed; font-size: 13px;
+  }
+  .komp-table th { background: #f8f9fa; }
+  .komp-table .markah-cell {
+    font-weight: bold; color: #1e3c72; font-size: 16px;
+  }
+
+  .section-title {
+    color: #1e3c72; font-size: 15px; font-weight: bold;
+    margin: 18px 0 10px; padding-bottom: 5px;
+    border-bottom: 2px solid #e0e6ed;
+  }
+
+  ul.bullet { margin-left: 22px; line-height: 1.8; font-size: 13px; }
+
+  .kesalahan-row {
+    display: grid; grid-template-columns: 100px 1fr 1fr 2fr;
+    gap: 8px; padding: 8px; background: #f8f9fa;
+    border-radius: 4px; margin-bottom: 5px; font-size: 12px;
+  }
+  .kesalahan-row .salah { color: #dc3545; font-weight: 600; }
+  .kesalahan-row .betul { color: #28a745; font-weight: 600; }
+
+  .loading {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid #fff; border-top: 2px solid transparent;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  details { margin-top: 12px; }
+  summary { cursor: pointer; font-weight: 600; color: #1e3c72; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>📝 Pemeriksa Karangan BM SPM — v4.0</h1>
+    <p>3 Langkah Sahaja • Paste Gambar Terus • AI Baca + Periksa Serentak</p>
+  </header>
+
+  <!-- TETAPAN -->
+  <div class="step" style="padding-top:30px;">
+    <h2 style="padding-left:0;">⚙️ Tetapan API <span id="apiStatus" class="badge badge-no">Belum</span></h2>
+    <div class="row">
+      <div>
+        <label>Gemini API Key</label>
+        <input type="password" id="apiKey" placeholder="Tampal API Key...">
+      </div>
+      <div>
+        <label>Model AI (Vision)</label>
+        <select id="model">
+          <option value="gemini-3-flash-preview">gemini-3-flash-preview (Pantas)</option>
+          <option value="gemini-pro-latest" selected>gemini-pro-latest (Disyorkan untuk Tulisan Tangan)</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-sm" onclick="saveKey()" style="margin-top:8px;">💾 Simpan</button>
+  </div>
+
+  <!-- LANGKAH 1 -->
+  <div class="step">
+    <span class="step-num">1</span>
+    <h2>Muat Naik Kriteria & Skema <span id="kStatus" class="badge badge-no">Belum</span></h2>
+
+    <div class="alert alert-info">
+      💡 Muat naik fail <b>kriteria penskoran + skema jawapan + soalan peperiksaan</b>. Boleh juga taip terus.
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+      <input type="file" id="fKriteria" multiple accept=".pdf,.docx,.txt,.jpg,.jpeg,.png">
+      <button class="btn-sm" onclick="prosesKriteria()">📂 Proses Fail</button>
+    </div>
+
+    <label>Atau taip/tampal teks kriteria di sini:</label>
+    <textarea id="kText" rows="6" placeholder="Salin & tampal teks kriteria penskoran + skema jawapan + soalan di sini..."></textarea>
+
+    <div style="margin-top:8px;">
+      <button onclick="simpanKriteria()" class="btn-sm" style="background:#28a745;">✅ Simpan Kriteria</button>
+      <button onclick="lihatKriteria()" class="btn-sm btn-warn">👁️ Semak Tersimpan</button>
+      <button onclick="padamKriteria()" class="btn-sm btn-red">🗑️ Padam</button>
+      <span id="kMsg" style="font-size:12px;margin-left:10px;color:#666;"></span>
+    </div>
+  </div>
+
+  <!-- LANGKAH 2 -->
+  <div class="step">
+    <span class="step-num">2</span>
+    <h2>Tampal Gambar Karangan Murid</h2>
+
+    <div class="alert alert-warn">
+      📌 Tampal <b>1, 2, atau 3 gambar</b> untuk satu karangan murid. Jika karangan ada beberapa muka surat, tampal semua dalam satu sesi.
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Nama Murid (pilihan)</label>
+        <input type="text" id="namaMurid" placeholder="Cth: Yuki Ko Yi Qi">
+      </div>
+      <div>
+        <label>Bahagian Karangan</label>
+        <select id="bahagian">
+          <option value="A">Bahagian A (30 markah)</option>
+          <option value="B" selected>Bahagian B (70 markah)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="paste-zone" id="pasteZone" tabindex="0">
+      <div class="big">📋 Klik di sini, kemudian tekan Ctrl+V</div>
+      <div class="small">Atau drag & drop gambar terus ke sini</div>
+      <div class="small">📱 Mobile: tap untuk pilih dari galeri</div>
+      <input type="file" id="pickImg" multiple accept="image/*" style="display:none;">
+    </div>
+
+    <div class="img-grid" id="imgGrid"></div>
+
+    <div id="imgInfo" style="margin-top:10px;font-size:13px;color:#666;"></div>
+  </div>
+
+  <!-- LANGKAH 3 -->
+  <div class="step">
+    <span class="step-num">3</span>
+    <h2>Periksa & Beri Markah</h2>
+
+    <div class="alert alert-info">
+      🤖 AI akan: (1) Baca tulisan tangan dari gambar → (2) Periksa berpandukan kriteria → (3) Beri markah + justifikasi terperinci
+    </div>
+
+    <button class="btn-go" onclick="periksa()" id="btnGo">
+      🚀 Periksa Karangan Sekarang
+    </button>
+
+    <p id="goStatus" style="font-size:13px;margin-top:10px;color:#666;text-align:center;"></p>
+  </div>
+
+  <!-- KEPUTUSAN -->
+  <div class="result-box" id="resultBox">
+    <h2 style="color:#1e3c72;">📊 Keputusan Pemeriksaan</h2>
+    <div id="resultContent"></div>
+    <div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button onclick="cetakLaporan()">🖨️ Cetak/PDF</button>
+      <button onclick="simpanLaporan()" class="btn-sm">💾 Simpan HTML</button>
+      <button onclick="periksaBaharu()" class="btn-warn btn-sm">🔄 Periksa Murid Baharu</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============= STATE =============
+let imgList = []; // [{url, file}]
+let lastResult = null;
+
+// ============= INIT =============
+window.onload = () => {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  // Load tetapan
+  if (localStorage.getItem('gemini_key')) {
+    document.getElementById('apiKey').value = localStorage.getItem('gemini_key');
+    setStatus('apiStatus', true, 'Aktif');
+  }
+  if (localStorage.getItem('gemini_model')) {
+    document.getElementById('model').value = localStorage.getItem('gemini_model');
+  }
+  if (localStorage.getItem('kriteria_v4')) {
+    document.getElementById('kText').value = localStorage.getItem('kriteria_v4');
+    setStatus('kStatus', true, 'Tersimpan ✓');
+  }
+
+  // Setup paste zone
+  const pz = document.getElementById('pasteZone');
+  pz.addEventListener('click', () => {
+    pz.focus();
+    if (imgList.length === 0) document.getElementById('pickImg').click();
+  });
+  pz.addEventListener('paste', handlePaste);
+  pz.addEventListener('dragover', e => { e.preventDefault(); pz.classList.add('dragover'); });
+  pz.addEventListener('dragleave', () => pz.classList.remove('dragover'));
+  pz.addEventListener('drop', e => {
+    e.preventDefault();
+    pz.classList.remove('dragover');
+    handleFiles(Array.from(e.dataTransfer.files));
+  });
+
+  // Global paste (anywhere on page)
+  document.addEventListener('paste', (e) => {
+    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+    handlePaste(e);
+  });
+
+  document.getElementById('pickImg').addEventListener('change', e => handleFiles(Array.from(e.target.files)));
+};
+
+function setStatus(id, ok, text) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'badge ' + (ok ? 'badge-ok' : 'badge-no');
+}
+
+// ============= API KEY =============
+function saveKey() {
+  const k = document.getElementById('apiKey').value.trim();
+  const m = document.getElementById('model').value;
+  if (!k) return alert('Sila masukkan API Key.');
+  localStorage.setItem('gemini_key', k);
+  localStorage.setItem('gemini_model', m);
+  setStatus('apiStatus', true, 'Aktif');
+  alert('✅ Disimpan.');
+}
+
+// ============= LANGKAH 1: KRITERIA =============
+async function prosesKriteria() {
+  const files = document.getElementById('fKriteria').files;
+  if (files.length === 0) return alert('Pilih fail dahulu.');
+
+  const msg = document.getElementById('kMsg');
+  msg.innerHTML = '<span class="loading"></span> Memproses...';
+
+  let combined = document.getElementById('kText').value;
+  if (combined) combined += '\n\n';
+
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    msg.innerHTML = `<span class="loading"></span> [${i+1}/${files.length}] ${f.name}...`;
+    try {
+      const text = await extractText(f);
+      combined += `=== ${f.name} ===\n${text}\n\n`;
+    } catch (e) {
+      msg.innerHTML = `❌ Ralat ${f.name}: ${e.message}`;
+      console.error(e);
+      return;
+    }
+  }
+
+  document.getElementById('kText').value = combined;
+  msg.innerHTML = `✅ Diekstrak (${combined.length} aksara). Klik <b>Simpan Kriteria</b>.`;
+}
+
+function simpanKriteria() {
+  const t = document.getElementById('kText').value.trim();
+  if (!t) return alert('Tiada teks untuk disimpan.');
+  localStorage.setItem('kriteria_v4', t);
+  setStatus('kStatus', true, 'Tersimpan ✓');
+  document.getElementById('kMsg').innerHTML = `✅ Disimpan (${t.length} aksara)`;
+}
+
+function lihatKriteria() {
+  const t = localStorage.getItem('kriteria_v4');
+  if (!t) return alert('Belum ada kriteria tersimpan.');
+  alert(`Kriteria tersimpan (${t.length} aksara):\n\n` + t.substring(0, 500) + (t.length > 500 ? '\n\n...(dipotong)' : ''));
+}
+
+function padamKriteria() {
+  if (!confirm('Padam kriteria tersimpan?')) return;
+  localStorage.removeItem('kriteria_v4');
+  document.getElementById('kText').value = '';
+  setStatus('kStatus', false, 'Belum');
+  document.getElementById('kMsg').textContent = '';
+}
+
+// ============= EKSTRAK TEKS (DIBAIKI) =============
+async function extractText(file) {
+  const name = file.name.toLowerCase();
+  if (file.size === 0) throw new Error('Fail kosong');
+  if (file.size > 30 * 1024 * 1024) throw new Error('Fail terlalu besar (>30MB)');
+
+  console.log(`📥 Memproses: ${file.name}`);
+
+  if (name.endsWith('.txt')) {
+    return await file.text();
+  }
+
+  if (name.endsWith('.docx')) {
+    if (typeof mammoth === 'undefined') throw new Error('mammoth.js tidak dimuat');
+    const buf = await file.arrayBuffer();
+    const r = await mammoth.extractRawText({ arrayBuffer: buf });
+    return r.value;
+  }
+
+  if (name.endsWith('.doc')) {
+    throw new Error('Format .doc lama tidak disokong. Save As .docx dahulu.');
+  }
+
+  if (name.endsWith('.pdf')) {
+    return await extractPdfPintar(file);
+  }
+
+  if (file.type.startsWith('image/')) {
+    return await ocrImage(file);
+  }
+
+  throw new Error('Format tidak disokong: ' + name);
+}
+
+// ============= EKSTRAK PDF PINTAR (TEKS + AUTO-OCR) =============
+async function extractPdfPintar(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+
+  // Cuba ekstrak sebagai teks dulu
+  let teksBiasa = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const p = await pdf.getPage(i);
+    const c = await p.getTextContent();
+    teksBiasa += c.items.map(it => it.str).join(' ') + '\n';
+  }
+
+  // Kira ketumpatan teks per halaman
+  const aksaraPerHalaman = teksBiasa.length / pdf.numPages;
+  console.log(`PDF ${pdf.numPages} halaman, ${teksBiasa.length} aksara (${aksaraPerHalaman.toFixed(0)}/halaman)`);
+
+  // Jika ketumpatan > 200 aksara/halaman → PDF teks normal
+  if (aksaraPerHalaman > 200) {
+    console.log('✅ PDF Teks - guna ekstrak biasa');
+    return teksBiasa;
+  }
+
+  // Jika kurang → kemungkinan PDF imej, guna OCR
+  console.log('⚠️ PDF Imej dikesan - beralih ke OCR Gemini Vision...');
+
+  const apiKey = localStorage.getItem('gemini_key');
+  if (!apiKey) {
+    throw new Error('PDF ini berbentuk imej (scan). OCR diperlukan tetapi API Key belum ditetapkan.');
+  }
+
+  const msg = document.getElementById('kMsg');
+
+  let teksOCR = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    if (msg) msg.innerHTML = `<span class="loading"></span> OCR halaman ${i}/${pdf.numPages}...`;
+
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale: 2.0 });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({
+      canvasContext: canvas.getContext('2d'),
+      viewport: viewport
+    }).promise;
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    const teksPage = await ocrDataUrl(dataUrl);
+    teksOCR += `\n--- Halaman ${i} ---\n${teksPage}\n`;
+
+    // Delay antara halaman untuk elak rate limit
+    if (i < pdf.numPages) await new Promise(r => setTimeout(r, 800));
+  }
+
+  console.log(`✅ OCR selesai: ${teksOCR.length} aksara`);
+  return teksOCR;
+}
+
+// ============= OCR DARI DATA URL =============
+async function ocrDataUrl(dataUrl) {
+  const k = localStorage.getItem('gemini_key');
+  if (!k) throw new Error('API Key belum ditetapkan');
+  const m = localStorage.getItem('gemini_model') || 'gemini-1.5-pro';
+  const b64 = dataUrl.split(',')[1];
+  const mime = dataUrl.match(/data:(.*?);/)[1];
+
+  const prompt = `Ekstrak SEMUA teks dari imej ini dalam Bahasa Melayu.
+- Kekalkan susunan asal (perenggan, jadual, senarai)
+- Jika ada jadual rubrik/skema, kekalkan struktur jadual
+- Jika ada nombor markah, kekalkan dengan tepat
+- Output teks sahaja, tanpa komen tambahan`;
+
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${k}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [
+        { text: prompt },
+        { inline_data: { mime_type: mime, data: b64 } }
+      ]}],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`OCR gagal: ${err.substring(0, 150)}`);
+  }
+  const d = await res.json();
+  return d.candidates[0].content.parts[0].text;
+}
+
+// ============= GANTI ocrImage SUPAYA GUNA ocrDataUrl =============
+async function ocrImage(file) {
+  const dataUrl = await fileToDataUrl(file);
+  return await ocrDataUrl(dataUrl);
+}
+
+// ============= LANGKAH 2: GAMBAR KARANGAN =============
+async function handlePaste(e) {
+  if (!e.clipboardData) return;
+  const items = e.clipboardData.items;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const blob = item.getAsFile();
+      await tambahGambar(blob);
+    }
+  }
+}
+
+async function handleFiles(files) {
+  for (const f of files) {
+    if (f.type.startsWith('image/')) await tambahGambar(f);
+  }
+}
+
+async function tambahGambar(blob) {
+  if (imgList.length >= 5) {
+    alert('Maksimum 5 gambar setiap karangan.');
+    return;
+  }
+  const url = await fileToDataUrl(blob);
+  imgList.push({ url, blob });
+  renderGambar();
+}
+
+function renderGambar() {
+  const grid = document.getElementById('imgGrid');
+  grid.innerHTML = imgList.map((img, i) => `
+    <div class="img-card">
+      <div class="num">${i+1}</div>
+      <button class="del" onclick="hapusGambar(${i})">×</button>
+      <img src="${img.url}" alt="Halaman ${i+1}">
+    </div>
+  `).join('');
+  document.getElementById('imgInfo').innerHTML =
+    imgList.length > 0
+      ? `✅ <b>${imgList.length} gambar</b> sedia diperiksa. Anda boleh tambah lagi atau teruskan ke Langkah 3.`
+      : '';
+}
+
+function hapusGambar(i) {
+  imgList.splice(i, 1);
+  renderGambar();
+}
+
+function fileToDataUrl(file) {
+  return new Promise(r => {
+    const fr = new FileReader();
+    fr.onload = () => r(fr.result);
+    fr.readAsDataURL(file);
+  });
+}
+
+// ============= LANGKAH 3: PERIKSA =============
+async function periksa() {
+  // Validasi
+  const apiKey = localStorage.getItem('gemini_key');
+  const kriteria = localStorage.getItem('kriteria_v4');
+
+  if (!apiKey) return alert('⚠️ Sila tetapkan API Key dahulu.');
+  if (!kriteria) return alert('⚠️ Sila simpan kriteria penskoran (Langkah 1).');
+  if (imgList.length === 0) return alert('⚠️ Sila tampal/muat naik gambar karangan murid (Langkah 2).');
+
+  const btn = document.getElementById('btnGo');
+  const status = document.getElementById('goStatus');
+  btn.disabled = true;
+  status.innerHTML = '<span class="loading"></span> AI sedang membaca tulisan tangan & memeriksa karangan...';
+
+  try {
+    const result = await aiPeriksa(kriteria);
+    lastResult = result;
+    paparKeputusan(result);
+    status.innerHTML = '✅ Pemeriksaan selesai!';
+  } catch (e) {
+    console.error(e);
+    status.innerHTML = '';
+    document.getElementById('resultBox').style.display = 'block';
+    document.getElementById('resultContent').innerHTML = `
+      <div class="alert alert-err">
+        <b>❌ Ralat:</b> ${e.message}<br><br>
+        <b>Cadangan:</b><br>
+        • Periksa API Key & sambungan internet<br>
+        • Cuba tukar model AI (Gemini 1.5 Pro lebih tepat untuk tulisan tangan)<br>
+        • Pastikan gambar jelas & terang
+      </div>
+    `;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function aiPeriksa(kriteria) {
+  const apiKey = localStorage.getItem('gemini_key');
+  const model = localStorage.getItem('gemini_model') || 'gemini-3-flash-preview';
+  const nama = document.getElementById('namaMurid').value.trim() || 'Murid';
+  const bhg = document.getElementById('bahagian').value;
+  const max = bhg === 'A' ? 30 : 70;
+
+  const prompt = `Anda PEMERIKSA RASMI Kertas 1 Bahasa Melayu SPM (1103/1) yang berpengalaman.
+
+═══════════════════════════════════════
+[KRITERIA PENSKORAN & SKEMA JAWAPAN]
+═══════════════════════════════════════
+${kriteria}
+
+═══════════════════════════════════════
+[TUGAS ANDA]
+═══════════════════════════════════════
+${imgList.length} gambar di bawah adalah skrip karangan tulisan tangan murid bernama "${nama}" untuk Bahagian ${bhg} (${max} markah).
+
+LANGKAH 1 - BACA DAN TRANSKRIP:
+- Baca tulisan tangan murid dengan teliti dari semua gambar (mengikut urutan)
+- Transkripkan teks penuh karangan
+- KEKALKAN kesalahan ejaan, tatabahasa, tanda baca murid (jangan betulkan)
+- Jika ada perkataan tidak jelas, tulis [?]
+
+LANGKAH 2 - PERIKSA & BERI MARKAH:
+- Periksa SECARA KETAT berpandukan kriteria/skema di atas
+- Beri markah komponen + markah keseluruhan
+- Justifikasi setiap markah dengan rujukan klausa kriteria
+
+LANGKAH 3 - HASILKAN LAPORAN:
+Output JSON SAHAJA (tanpa markdown, tanpa teks tambahan):
+
+{
+  "nama": "${nama}",
+  "bahagian": "${bhg}",
+  "markah_keseluruhan": <angka 0-${max}>,
+  "markah_maksimum": ${max},
+  "tahap": "Cemerlang/Kepujian/Baik/Memuaskan/Penguasaan Minimum",
+  "transkrip_karangan": "Teks penuh karangan murid (kekalkan kesalahan asal)",
+  "jumlah_patah_perkataan": <angka>,
+  "komponen": {
+    "bahasa": {
+      "markah": <angka>,
+      "maksimum": <angka>,
+      "tahap": "...",
+      "ulasan": "Ulasan terperinci tentang penggunaan bahasa",
+      "justifikasi": "Rujuk klausa: '...' dari kriteria. Sebab markah diberi pada tahap ini..."
+    },
+    "isi": {
+      "markah": <angka>,
+      "maksimum": <angka>,
+      "tahap": "...",
+      "ulasan": "Ulasan tentang isi & idea",
+      "justifikasi": "Rujuk klausa: '...' Sebab isi pada tahap ini..."
+    },
+    "pengolahan": {
+      "markah": <angka>,
+      "maksimum": <angka>,
+      "tahap": "...",
+      "ulasan": "Ulasan tentang struktur & pengolahan",
+      "justifikasi": "Rujuk klausa: '...' Sebab pengolahan pada tahap ini..."
+    }
+  },
+  "kesalahan_bahasa": [
+    {"jenis": "ejaan", "salah": "...", "betul": "...", "petikan_ayat": "..."},
+    {"jenis": "tatabahasa", "salah": "...", "betul": "...", "petikan_ayat": "..."}
+  ],
+  "isi_yang_dikemukakan": ["Isi 1: ...", "Isi 2: ...", "Isi 3: ..."],
+  "kekuatan": ["Kekuatan 1", "Kekuatan 2", "Kekuatan 3"],
+  "penambahbaikan": ["Cadangan 1", "Cadangan 2", "Cadangan 3"],
+  "ulasan_pemeriksa": "Ulasan keseluruhan 4-5 ayat yang membina untuk murid",
+  "rujukan_skema_keseluruhan": "Petikan klausa khusus dari skema/kriteria yang menjadi asas pemberian markah keseluruhan"
+}`;
+
+  const parts = [{ text: prompt }];
+  for (const img of imgList) {
+    const b64 = img.url.split(',')[1];
+    const mime = img.url.match(/data:(.*?);/)[1];
+    parts.push({ inline_data: { mime_type: mime, data: b64 } });
+  }
+
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 8192,
+        responseMimeType: 'application/json'
+      }
+    })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`API gagal (${res.status}): ${errText.substring(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const text = data.candidates[0].content.parts[0].text;
+  return parseJSON(text);
+}
+
+function parseJSON(text) {
+  let cleaned = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  const m = cleaned.match(/\{[\s\S]*\}/);
+  if (m) cleaned = m[0];
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    console.error('Gagal parse JSON. Respons:', text);
+    throw new Error('Respons AI bukan JSON sah. Sila cuba lagi.');
+  }
+}
+
+// ============= PAPARAN KEPUTUSAN =============
+function paparKeputusan(h) {
+  document.getElementById('resultBox').style.display = 'block';
+  const c = document.getElementById('resultContent');
+
+  c.innerHTML = `
+    <h3 style="color:#1e3c72;margin-bottom:5px;">${h.nama} — Bahagian ${h.bahagian}</h3>
+    <p style="color:#666;font-size:13px;margin-bottom:15px;">${h.jumlah_patah_perkataan || '-'} patah perkataan</p>
+
+    <div class="markah-besar">
+      <div class="num">${h.markah_keseluruhan} / ${h.markah_maksimum}</div>
+      <div class="lbl">${h.tahap}</div>
+    </div>
+
+    <div class="section-title">📊 Pecahan Markah</div>
+    <table class="komp-table">
+      <tr><th>Komponen</th><th>Markah</th><th>Tahap</th><th>Justifikasi</th></tr>
+      ${['bahasa','isi','pengolahan'].map(k => {
+        const x = h.komponen[k];
+        return `<tr>
+          <td><b>${k.charAt(0).toUpperCase()+k.slice(1)}</b></td>
+          <td class="markah-cell">${x.markah}/${x.maksimum}</td>
+          <td>${x.tahap}</td>
+          <td style="font-size:12px;">${x.ulasan}<br><br><i style="color:#666;">📌 ${x.justifikasi}</i></td>
+        </tr>`;
+      }).join('')}
+    </table>
+
+    <div class="section-title">💬 Ulasan Pemeriksa</div>
+    <p style="background:#fff3cd;padding:12px;border-radius:6px;font-size:13px;line-height:1.7;">${h.ulasan_pemeriksa}</p>
+
+    <div class="section-title">📋 Isi yang Dikemukakan</div>
+    <ul class="bullet">${(h.isi_yang_dikemukakan||[]).map(x => `<li>${x}</li>`).join('')}</ul>
+
+    <div class="section-title">✅ Kekuatan</div>
+    <ul class="bullet" style="color:#155724;">${(h.kekuatan||[]).map(x => `<li>${x}</li>`).join('')}</ul>
+
+    <div class="section-title">⚠️ Penambahbaikan</div>
+    <ul class="bullet" style="color:#856404;">${(h.penambahbaikan||[]).map(x => `<li>${x}</li>`).join('')}</ul>
+
+    <div class="section-title">❌ Kesalahan Bahasa Dikesan</div>
+    ${(h.kesalahan_bahasa||[]).length > 0 ? `
+      <div class="kesalahan-row" style="background:#1e3c72;color:white;font-weight:bold;">
+        <div>Jenis</div><div>Salah</div><div>Betul</div><div>Petikan Ayat</div>
+      </div>
+      ${h.kesalahan_bahasa.map(e => `
+        <div class="kesalahan-row">
+          <div>${e.jenis}</div>
+          <div class="salah">${e.salah}</div>
+          <div class="betul">${e.betul}</div>
+          <div style="font-style:italic;">"${e.petikan_ayat}"</div>
+        </div>
+      `).join('')}
+    ` : '<p style="color:#666;font-size:13px;">Tiada kesalahan bahasa ketara.</p>'}
+
+    <div class="section-title">📌 Rujukan Skema (Keseluruhan)</div>
+    <p style="background:#e3f2fd;padding:12px;border-radius:6px;font-size:13px;font-style:italic;">${h.rujukan_skema_keseluruhan}</p>
+
+    <details>
+      <summary>📄 Lihat Transkrip Karangan Murid</summary>
+      <div style="margin-top:10px;padding:15px;background:#f8f9fa;border-radius:6px;font-size:13px;line-height:1.8;white-space:pre-wrap;">${h.transkrip_karangan || '(tiada)'}</div>
+    </details>
+  `;
+
+  document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ============= EKSPORT & RESET =============
+function cetakLaporan() {
+  if (!lastResult) return;
+  const w = window.open('', '', 'width=900,height=700');
+  w.document.write(`<html><head><meta charset="utf-8"><title>Laporan ${lastResult.nama}</title>
+    <style>body{font-family:Arial;padding:30px;}h1,h2,h3{color:#1e3c72;}
+    .box{background:#28a745;color:white;padding:20px;text-align:center;border-radius:10px;margin:15px 0;}
+    .box .num{font-size:36px;font-weight:bold;}
+    table{width:100%;border-collapse:collapse;margin:10px 0;}
+    th,td{padding:8px;border:1px solid #ddd;text-align:left;font-size:13px;}
+    th{background:#f8f9fa;}</style></head><body>
+    ${document.getElementById('resultContent').innerHTML}
+    </body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 500);
+}
+
+function simpanLaporan() {
+  if (!lastResult) return;
+  const html = `<html><head><meta charset="utf-8"><title>Laporan ${lastResult.nama}</title>
+    <style>body{font-family:Arial;padding:30px;max-width:900px;margin:auto;}h1,h2,h3{color:#1e3c72;}
+    .markah-besar{background:linear-gradient(135deg,#28a745,#20c997);color:white;padding:20px;text-align:center;border-radius:10px;}
+    .markah-besar .num{font-size:42px;font-weight:bold;}
+    table{width:100%;border-collapse:collapse;}th,td{padding:10px;border:1px solid #ddd;}th{background:#f8f9fa;}
+    .salah{color:#dc3545;font-weight:600;}.betul{color:#28a745;font-weight:600;}
+    </style></head><body>${document.getElementById('resultContent').innerHTML}</body></html>`;
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `laporan_${lastResult.nama.replace(/\s/g,'_')}_${Date.now()}.html`;
+  a.click();
+}
+
+function periksaBaharu() {
+  imgList = [];
+  lastResult = null;
+  document.getElementById('namaMurid').value = '';
+  document.getElementById('imgGrid').innerHTML = '';
+  document.getElementById('imgInfo').innerHTML = '';
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('goStatus').textContent = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

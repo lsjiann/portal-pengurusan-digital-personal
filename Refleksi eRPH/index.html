@@ -1,23 +1,15 @@
-<!-- File: erph-generator-v3.1.html -->
+<!-- File: erph-generator-v3.5.html -->
 <!DOCTYPE html>
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistem Penjana eRPH v3.1 - Dengan Patch Stabiliti</title>
+<title>Sistem Penjana eRPH v3.5 - Gemini + OpenRouter Fallback</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
-html, body { 
-  height: 100%; 
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch;
-}
-body {
-  min-height: 100vh;
-}
   body { font-family: 'Segoe UI', Tahoma, sans-serif; }
   .card { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
   .loader { border:3px solid #f3f3f3; border-top:3px solid #3b82f6; border-radius:50%; width:18px; height:18px; animation:spin 1s linear infinite; display:inline-block; vertical-align:middle; }
@@ -35,7 +27,6 @@ body {
   .model-fail { background:#fee2e2; color:#991b1b; }
   .model-trying { background:#fef3c7; color:#92400e; }
   
-  /* RPH Format Rasmi - 1 RPH = 1 muka surat (STRICT) */
   .rph-page {
     width: 210mm;
     height: 297mm;
@@ -50,39 +41,23 @@ body {
     overflow: hidden;
   }
   .rph-page:last-child { page-break-after: auto; }
-  .rph-table { 
-    width:100%; 
-    border-collapse:collapse; 
-    page-break-inside: avoid;
-  }
+  .rph-table { width:100%; border-collapse:collapse; page-break-inside: avoid; }
   .rph-table tr { page-break-inside: avoid; }
-  .rph-table td { 
-    border:1px solid #000; 
-    padding:3px 5px; 
-    vertical-align:top; 
-    page-break-inside: avoid;
-  }
+  .rph-table td { border:1px solid #000; padding:3px 5px; vertical-align:top; page-break-inside: avoid; }
   .rph-header { background:#e5e7eb; font-weight:bold; text-align:center; }
   .rph-label { background:#f3f4f6; font-weight:bold; width:22%; }
-  
-  /* Refleksi - perenggan berasingan font 10pt */
   .rph-refleksi { font-size:10pt; }
-  .rph-refleksi p { 
-    margin: 0 0 6pt 0; 
-    text-align: justify;
-  }
+  .rph-refleksi p { margin: 0 0 6pt 0; text-align: justify; }
   .rph-refleksi p:last-child { margin-bottom: 0; }
-  .rph-refleksi b { font-weight: bold; }
 </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4 md:p-8">
 
 <div class="max-w-6xl mx-auto">
 
-  <!-- HEADER -->
   <div class="bg-white rounded-2xl card p-6 mb-6">
-    <h1 class="text-2xl md:text-3xl font-bold text-gray-800">📋 Sistem Penjana eRPH v3.1</h1>
-    <p class="text-gray-600 mt-1">Format rasmi 1 muka surat • AI fallback 4 model • Auto-retry & rate-limit handling</p>
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800">📋 Sistem Penjana eRPH v3.5</h1>
+    <p class="text-gray-600 mt-1">Gemini + OpenRouter Fallback • Auto-retry • Format rasmi 1 muka surat</p>
     
     <div class="flex items-center justify-between mt-5 text-xs md:text-sm">
       <div class="flex items-center gap-2">
@@ -107,7 +82,6 @@ body {
     </div>
   </div>
 
-  <!-- TETAPAN -->
   <details class="bg-white rounded-2xl card p-6 mb-6">
     <summary class="cursor-pointer font-bold text-gray-800">⚙️ Tetapan AI & Profil Kelas</summary>
     
@@ -120,28 +94,26 @@ body {
     <div class="mt-4 grid md:grid-cols-2 gap-4">
       <div>
         <label class="block text-sm font-semibold mb-1">🔑 Google Gemini API Key</label>
-        <input id="geminiKey" type="password" class="w-full border rounded-lg p-2 text-sm" placeholder="Untuk model #1, #2, #3">
-        <p class="text-xs text-gray-500 mt-1">Dapatkan di aistudio.google.com/apikey</p>
+        <input id="geminiKey" type="password" class="w-full border rounded-lg p-2 text-sm" placeholder="Untuk model #1 & #2">
+        <p class="text-xs text-gray-500 mt-1">Dapatkan di aistudio.google.com/apikey (PERCUMA)</p>
       </div>
       <div>
-        <label class="block text-sm font-semibold mb-1">🔑 OpenAI API Key (opsional)</label>
-        <input id="openaiKey" type="password" class="w-full border rounded-lg p-2 text-sm" placeholder="Untuk model #4 (fallback terakhir)">
-        <p class="text-xs text-gray-500 mt-1">Sebagai sandaran jika Gemini gagal</p>
+        <label class="block text-sm font-semibold mb-1">🔑 OpenRouter API Key</label>
+        <input id="openrouterKey" type="password" class="w-full border rounded-lg p-2 text-sm" placeholder="Untuk model #3 & #4 (fallback)">
+        <p class="text-xs text-gray-500 mt-1">Dapatkan di openrouter.ai/keys (PERCUMA)</p>
       </div>
     </div>
     
     <div class="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
-      <h3 class="font-semibold text-sm mb-2">⏱️ Tetapan Stabiliti (PATCH v3.1)</h3>
+      <h3 class="font-semibold text-sm mb-2">⏱️ Tetapan Stabiliti</h3>
       <div class="grid md:grid-cols-2 gap-3">
         <div>
           <label class="block text-xs font-semibold mb-1">Selang antara request (saat)</label>
           <input id="delayBetween" type="number" min="0" max="30" value="4" class="w-full border rounded-lg p-2 text-sm">
-          <p class="text-xs text-gray-500 mt-1">Tinggi = lebih stabil tetapi lebih lambat</p>
         </div>
         <div>
-          <label class="block text-xs font-semibold mb-1">Bilangan cubaan retry per model</label>
+          <label class="block text-xs font-semibold mb-1">Bilangan retry per model</label>
           <input id="maxRetry" type="number" min="1" max="5" value="3" class="w-full border rounded-lg p-2 text-sm">
-          <p class="text-xs text-gray-500 mt-1">Auto-retry bila rate-limit (429/503)</p>
         </div>
       </div>
     </div>
@@ -163,7 +135,6 @@ body {
     </div>
   </details>
 
-  <!-- LANGKAH 1: UPLOAD -->
   <div class="bg-white rounded-2xl card p-6 mb-6">
     <h2 class="text-lg font-bold text-gray-800 mb-3">
       <span class="bg-blue-600 text-white rounded-full w-7 h-7 inline-flex items-center justify-center mr-2">1</span>
@@ -175,7 +146,6 @@ body {
       <p class="text-sm text-gray-500 mt-1">.docx / .txt / .md</p>
       <input id="fileInput" type="file" accept=".docx,.txt,.md" class="hidden">
     </div>
-    
     <div id="fileInfo" class="mt-3 hidden">
       <div class="bg-green-50 border border-green-200 rounded-lg p-3">
         <p class="text-sm text-green-800"><b>✅ Fail:</b> <span id="fileName"></span></p>
@@ -184,7 +154,6 @@ body {
     </div>
   </div>
 
-  <!-- LANGKAH 2: PEMERHATIAN -->
   <div id="seksyenPemerhatian" class="bg-white rounded-2xl card p-6 mb-6 hidden">
     <h2 class="text-lg font-bold text-gray-800 mb-3">
       <span class="bg-blue-600 text-white rounded-full w-7 h-7 inline-flex items-center justify-center mr-2">2</span>
@@ -192,11 +161,10 @@ body {
     </h2>
     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
       <textarea id="pemerhatianUmum" rows="5" class="w-full border rounded-lg p-3" 
-        placeholder="Contoh: Minggu ini murid 5I aktif dalam perbincangan tetapi lemah dalam penulisan terbeza. Murid 5H menunjukkan peningkatan dalam aktiviti kumpulan tetapi masih lemah membina ayat majmuk..."></textarea>
+        placeholder="Contoh: Minggu ini murid 5I aktif dalam perbincangan tetapi lemah dalam penulisan terbeza..."></textarea>
     </div>
   </div>
 
-  <!-- LANGKAH 3: JANA -->
   <div id="seksyenJana" class="bg-white rounded-2xl card p-6 mb-6 hidden">
     <h2 class="text-lg font-bold text-gray-800 mb-3">
       <span class="bg-blue-600 text-white rounded-full w-7 h-7 inline-flex items-center justify-center mr-2">3</span>
@@ -209,19 +177,14 @@ body {
     <div id="senaraiRefleksi" class="mt-4 space-y-3"></div>
   </div>
 
-  <!-- LANGKAH 4: MUAT TURUN -->
   <div id="seksyenMuatTurun" class="bg-white rounded-2xl card p-6 mb-6 hidden">
     <h2 class="text-lg font-bold text-gray-800 mb-3">
       <span class="bg-blue-600 text-white rounded-full w-7 h-7 inline-flex items-center justify-center mr-2">4</span>
-      Muat Turun eRPH (Format Rasmi - 1 RPH = 1 Muka Surat)
+      Muat Turun eRPH
     </h2>
     <div class="grid md:grid-cols-2 gap-3">
-      <button onclick="muatTurunDocx()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-4 rounded-lg font-bold">
-        📝 Word (.doc)
-      </button>
-      <button onclick="muatTurunPDF()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-lg font-bold">
-        📄 PDF
-      </button>
+      <button onclick="muatTurunDocx()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-4 rounded-lg font-bold">📝 Word (.doc)</button>
+      <button onclick="muatTurunPDF()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-lg font-bold">📄 PDF</button>
     </div>
     <div class="mt-4">
       <button onclick="togglePratonton()" class="text-blue-600 hover:underline font-semibold">👁️ Pratonton</button>
@@ -233,15 +196,17 @@ body {
 
 <script>
 //==========================================================
-// AI MODEL FALLBACK CHAIN
+// MODEL CHAIN: Gemini → OpenRouter (semua PERCUMA)
 //==========================================================
 const MODEL_CHAIN = [
-  { id:'gemini-3-flash-preview', label:'gemini-3-flash-preview', provider:'gemini', priority:1 },
-  { id:'gemini-2.5-flash', label:'Gemini 2.5 Flash', provider:'gemini', priority:2 },
-  { id:'gpt-4o-mini',      label:'GPT-4o Mini',      provider:'openai', priority:3 }
+  { id:'gemini-2.5-flash',                       label:'Gemini 2.5 Flash',  provider:'gemini',     priority:1 },
+  { id:'gemini-3-flash-preview',                 label:'gemini-3-flash-preview',  provider:'gemini',     priority:2 },
+  { id:'z-ai/glm-4.5-air:free',                  label:'GLM 4.5 Air',       provider:'openrouter', priority:3 },
+  { id:'meta-llama/llama-3.3-70b-instruct:free', label:'Llama 3.3 70B',     provider:'openrouter', priority:4 }
 ];
 
 let modelStatus = MODEL_CHAIN.map(m => ({...m, status:'idle'}));
+let sesiList = [];
 
 function paparModel() {
   document.getElementById('senaraiModel').innerHTML = modelStatus.map(m => {
@@ -253,11 +218,6 @@ function paparModel() {
     return `<div class="flex items-center justify-between"><span><b>#${m.priority}</b> ${m.label} <span class="text-gray-500">(${m.provider})</span></span> ${badge}</div>`;
   }).join('');
 }
-
-//==========================================================
-// STATE
-//==========================================================
-let sesiList = [];
 
 function setStep(n) {
   ['s1','s2','s3','s4'].forEach((id,i) => {
@@ -273,19 +233,20 @@ function setStep(n) {
 // SETTINGS
 //==========================================================
 function muatTetapan() {
-  const t = JSON.parse(localStorage.getItem('erphTetapanV31') || '{}');
+  const t = JSON.parse(localStorage.getItem('erphTetapanV35') || '{}');
   if(t.geminiKey) document.getElementById('geminiKey').value = t.geminiKey;
-  if(t.openaiKey) document.getElementById('openaiKey').value = t.openaiKey;
+  if(t.openrouterKey) document.getElementById('openrouterKey').value = t.openrouterKey;
   if(t.profil5I) document.getElementById('profil5I').value = t.profil5I;
   if(t.profil5H) document.getElementById('profil5H').value = t.profil5H;
   if(t.namaGuru) document.getElementById('namaGuru').value = t.namaGuru;
   if(t.delayBetween) document.getElementById('delayBetween').value = t.delayBetween;
   if(t.maxRetry) document.getElementById('maxRetry').value = t.maxRetry;
 }
+
 function simpanTetapan() {
-  localStorage.setItem('erphTetapanV31', JSON.stringify({
+  localStorage.setItem('erphTetapanV35', JSON.stringify({
     geminiKey: document.getElementById('geminiKey').value,
-    openaiKey: document.getElementById('openaiKey').value,
+    openrouterKey: document.getElementById('openrouterKey').value,
     profil5I: document.getElementById('profil5I').value,
     profil5H: document.getElementById('profil5H').value,
     namaGuru: document.getElementById('namaGuru').value,
@@ -395,7 +356,7 @@ function ekstrakSenarai(teks, regex) {
 }
 
 //==========================================================
-// AI - PROMPT (berdasarkan SK, SP, OP, KK, Profil, Pemerhatian)
+// PROMPT
 //==========================================================
 function buatPrompt(sesi) {
   const profil = sesi.kelas === '5I' 
@@ -403,33 +364,34 @@ function buatPrompt(sesi) {
     : document.getElementById('profil5H').value;
   const pemerhatianUmum = document.getElementById('pemerhatianUmum').value;
   
-  return `Anda guru pakar Bahasa  Melayu Tingkatan 5 dan SPM. Jana refleksi PdP untuk SATU kelas sahaja (${sesi.kelas}) dalam Bahasa Melayu formal.
+  const bersih = (t) => (t || '').replace(/"/g, "'").replace(/\n+/g, ' ').trim();
+  
+  return `Anda guru pakar Bahasa Melayu KSSR. Jana refleksi PdP ringkas untuk kelas ${sesi.kelas}.
 
-Maklumat PdP:
-- Kelas: ${sesi.kelas}
-- Tajuk: ${sesi.tajuk}
-- Kemahiran: ${sesi.kemahiran}
-- Standard Pembelajaran: ${sesi.standardPembelajaran}
-- Kriteria Kejayaan: ${sesi.kriteria}
+Maklumat:
+- Tajuk: ${bersih(sesi.tajuk)}
+- Kemahiran: ${bersih(sesi.kemahiran)}
+- Standard Pembelajaran: ${bersih(sesi.standardPembelajaran)}
+- Kriteria Kejayaan: ${bersih(sesi.kriteria).substring(0, 300)}
 
-Profil kelas ${sesi.kelas}: ${profil}
+Profil kelas: ${bersih(profil)}
+Pemerhatian guru: ${bersih(pemerhatianUmum) || 'tiada'}
 
-Pemerhatian guru minggu ini: ${pemerhatianUmum || '(tiada)'}
-
-Hasilkan refleksi 3 bahagian (2-3 ayat setiap satu):
-1. Kekuatan murid (kaitkan dengan Standard Pembelajaran yang dikuasai)
-2. Kelemahan murid (kaitkan dengan profil kelas & pemerhatian guru)
+Jana refleksi 3 bahagian (2 ayat ringkas sahaja setiap bahagian, JANGAN gunakan tanda petik dalam ayat):
+1. Kekuatan murid (kaitkan dengan Standard Pembelajaran)
+2. Kelemahan murid (kaitkan dengan profil kelas)  
 3. Tindakan susulan (cadangan praktikal)
 
-Gunakan istilah pedagogi KPM (PAK21, PBD, KBAT, pendekatan terbeza).
+Gunakan istilah KPM (PAK21, PBD, KBAT, pendekatan terbeza).
 
-Pulangkan SATU OBJEK JSON RATA sahaja:
+PENTING: Pulangkan SATU OBJEK JSON RATA sahaja. JANGAN guna tanda petik berganda dalam nilai string.
+
+Format:
 {"kekuatan":"...","kelemahan":"...","tindakan":"..."}`;
 }
 
-
 //==========================================================
-// FIX v3.2: Parser JSON pintar - tangani array, nested, & object rata
+// PARSE JSON
 //==========================================================
 function parseJSONSelamat(teks) {
   let bersih = (teks || '').trim()
@@ -437,11 +399,25 @@ function parseJSONSelamat(teks) {
     .replace(/^```\s*/i, '')
     .replace(/\s*```$/i, '');
   
-  // Cari sama ada JSON object atau array yang sah
+  const cubaPulihJSON = (str) => {
+    let str2 = str.trim();
+    if(!str2.endsWith('}')) {
+      const tindakanMatch = str2.match(/"tindakan"\s*:\s*"([^"]*?)$/);
+      if(tindakanMatch) {
+        str2 = str2 + '"}';
+      } else {
+        const kelemahanMatch = str2.match(/^(.*?"kelemahan"\s*:\s*"[^"]*")/s);
+        if(kelemahanMatch) {
+          str2 = kelemahanMatch[1] + ',"tindakan":"(Perlu dijana semula - output terpotong)"}';
+        }
+      }
+    }
+    return str2;
+  };
+  
   const matchObj = bersih.match(/\{[\s\S]*\}/);
   const matchArr = bersih.match(/$$[\s\S]*$$/);
   
-  // Pilih yang lebih panjang (lebih lengkap)
   if(matchArr && (!matchObj || matchArr[0].length > matchObj[0].length)) {
     bersih = matchArr[0];
   } else if(matchObj) {
@@ -452,10 +428,15 @@ function parseJSONSelamat(teks) {
   try {
     data = JSON.parse(bersih);
   } catch(e) {
-    throw new Error(`JSON tidak boleh di-parse: ${(teks||'').substring(0,100)}...`);
+    try {
+      bersih = cubaPulihJSON(bersih);
+      data = JSON.parse(bersih);
+      console.warn('JSON dipulihkan dari output terpotong');
+    } catch(e2) {
+      throw new Error(`JSON tidak boleh di-parse: ${(teks||'').substring(0,100)}...`);
+    }
   }
   
-  // KES 1: Array - ambil objek pertama yang ada keys yang diperlukan
   if(Array.isArray(data)) {
     for(const item of data) {
       const hasil = ekstrakRefleksi(item);
@@ -464,11 +445,9 @@ function parseJSONSelamat(teks) {
     throw new Error('Array tidak mengandungi refleksi yang sah');
   }
   
-  // KES 2: Object rata atau bersarang
   const hasil = ekstrakRefleksi(data);
   if(hasil) return hasil;
   
-  // KES 3: Object bersarang (cth: { "refleksi_5I": { kekuatan, ... } })
   for(const key in data) {
     if(typeof data[key] === 'object' && data[key] !== null) {
       const dalaman = ekstrakRefleksi(data[key]);
@@ -479,32 +458,16 @@ function parseJSONSelamat(teks) {
   throw new Error('Struktur JSON tidak mengandungi kekuatan/kelemahan/tindakan');
 }
 
-//==========================================================
-// FIX v3.2: Helper - cari & normalisasi keys
-//==========================================================
 function ekstrakRefleksi(obj) {
   if(!obj || typeof obj !== 'object') return null;
   
-  // Cari keys dengan variasi nama (case-insensitive, dengan/tanpa underscore)
   const cariKey = (namaKey) => {
-    const variasi = [
-      namaKey,
-      namaKey.toUpperCase(),
-      namaKey.charAt(0).toUpperCase() + namaKey.slice(1),
-      namaKey + '_susulan',
-      'tindakan_susulan'
-    ];
+    const variasi = [namaKey, namaKey.toUpperCase(), namaKey.charAt(0).toUpperCase() + namaKey.slice(1), namaKey + '_susulan', 'tindakan_susulan'];
     for(const v of variasi) {
-      if(obj[v] !== undefined && typeof obj[v] === 'string' && obj[v].length > 10) {
-        return obj[v];
-      }
+      if(obj[v] !== undefined && typeof obj[v] === 'string' && obj[v].length > 10) return obj[v];
     }
-    // Cari secara fuzzy
     for(const k in obj) {
-      if(k.toLowerCase().includes(namaKey.toLowerCase()) && 
-         typeof obj[k] === 'string' && obj[k].length > 10) {
-        return obj[k];
-      }
+      if(k.toLowerCase().includes(namaKey.toLowerCase()) && typeof obj[k] === 'string' && obj[k].length > 10) return obj[k];
     }
     return null;
   };
@@ -513,69 +476,16 @@ function ekstrakRefleksi(obj) {
   const kelemahan = cariKey('kelemahan');
   const tindakan = cariKey('tindakan');
   
-  if(kekuatan && kelemahan && tindakan) {
-    return { kekuatan, kelemahan, tindakan };
-  }
+  if(kekuatan && kelemahan && tindakan) return { kekuatan, kelemahan, tindakan };
   return null;
 }
 
 //==========================================================
-// FIX v3.2: Prompt yang lebih tegas - elak format pelbagai
-//==========================================================
-function buatPrompt(sesi) {
-  const profil = sesi.kelas === '5I' 
-    ? document.getElementById('profil5I').value 
-    : document.getElementById('profil5H').value;
-  const pemerhatianUmum = document.getElementById('pemerhatianUmum').value;
-  
-  return `Anda ialah guru pakar Bahasa Melayu KSSR Tahap 2 di Malaysia. Hasilkan refleksi PdP rasmi dalam Bahasa Melayu formal yang mematuhi SKPMg2 Standard 4.
-
-=== KONTEKS ===
-PROFIL KELAS ${sesi.kelas}:
-${profil}
-
-PEMERHATIAN UMUM GURU MINGGU INI:
-${pemerhatianUmum || '(tiada pemerhatian khusus)'}
-
-=== ASAS PEDAGOGI (RUJUKAN UTAMA) ===
-STANDARD KANDUNGAN: ${sesi.standardKandungan}
-STANDARD PEMBELAJARAN: ${sesi.standardPembelajaran}
-OBJEKTIF PEMBELAJARAN: ${sesi.objektif}
-KRITERIA KEJAYAAN: ${sesi.kriteria}
-TAJUK: ${sesi.tajuk}
-KEMAHIRAN: ${sesi.kemahiran}
-
-=== ARAHAN ===
-Hasilkan refleksi UNTUK SATU KELAS SAHAJA (kelas ${sesi.kelas}):
-1. KEKUATAN: aspek STANDARD PEMBELAJARAN yang dikuasai murid (2-3 ayat)
-2. KELEMAHAN: aspek STANDARD PEMBELAJARAN/KRITERIA KEJAYAAN yang tidak tercapai (2-3 ayat)
-3. TINDAKAN: cadangan praktikal untuk PdP akan datang (2-3 ayat)
-
-Gunakan istilah pedagogi KPM (PAK21, PBD, KBAT, pendekatan terbeza, scaffolding).
-
-=== FORMAT OUTPUT (WAJIB DIPATUHI) ===
-Pulangkan SATU OBJEK JSON RATA SAHAJA dengan TIGA kunci ini:
-- "kekuatan" (string)
-- "kelemahan" (string)
-- "tindakan" (string)
-
-JANGAN gunakan array [].
-JANGAN gunakan objek bersarang seperti {"refleksi_5I": {...}}.
-JANGAN tambah kunci lain seperti "kelas".
-
-Contoh format yang BETUL:
-{"kekuatan":"...","kelemahan":"...","tindakan":"..."}
-
-Pulangkan JSON sahaja, tanpa teks lain.`;
-}
-
-
-//==========================================================
-// PATCH v3.1: AI CALL DENGAN RETRY & RATE-LIMIT HANDLING
+// PANGGIL MODEL (Gemini + OpenRouter)
 //==========================================================
 async function panggilModel(model, prompt, cubaan = 1) {
   const geminiKey = document.getElementById('geminiKey').value.trim();
-  const openaiKey = document.getElementById('openaiKey').value.trim();
+  const openrouterKey = document.getElementById('openrouterKey').value.trim();
   const maxRetry = parseInt(document.getElementById('maxRetry').value) || 3;
   
   if(model.provider === 'gemini') {
@@ -587,9 +497,9 @@ async function panggilModel(model, prompt, cubaan = 1) {
       body: JSON.stringify({
         contents:[{parts:[{text:prompt}]}],
         generationConfig:{
-          temperature:0.75, 
-          responseMimeType:'application/json',
-          maxOutputTokens: 1024
+          temperature: 0.6,
+          responseMimeType: 'application/json',
+          maxOutputTokens: 2048
         }
       })
     });
@@ -597,57 +507,88 @@ async function panggilModel(model, prompt, cubaan = 1) {
     if(res.status === 429 || res.status === 503) {
       if(cubaan < maxRetry) {
         const delay = cubaan * 5000;
-        console.log(`[${model.label}] Rate limit (${res.status}). Menunggu ${delay/1000}s sebelum cuba semula (cubaan ${cubaan+1}/${maxRetry})...`);
+        console.log(`[${model.label}] Rate limit. Tunggu ${delay/1000}s...`);
         await new Promise(r => setTimeout(r, delay));
         return panggilModel(model, prompt, cubaan + 1);
       }
-      throw new Error(`Rate limit selepas ${cubaan} cubaan (HTTP ${res.status})`);
+      throw new Error(`Rate limit selepas ${cubaan} cubaan`);
     }
     
     const data = await res.json();
     if(data.error) throw new Error(data.error.message);
-    
     const teks = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if(!teks) throw new Error('Respons kosong dari Gemini');
     
-    return parseJSONSelamat(teks);
+    const finishReason = data.candidates?.[0]?.finishReason;
+    if(finishReason === 'MAX_TOKENS') {
+      throw new Error('Output terpotong (MAX_TOKENS)');
+    }
     
-  } else {
-    if(!openaiKey) throw new Error('Tiada OpenAI API Key');
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${openaiKey}`},
+    return parseJSONSelamat(teks);
+  }
+  
+  else if(model.provider === 'openrouter') {
+    if(!openrouterKey) throw new Error('Tiada OpenRouter API Key');
+    
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openrouterKey}`,
+        'HTTP-Referer': window.location.href,
+        'X-Title': 'eRPH Generator'
+      },
       body: JSON.stringify({
         model: model.id,
-        messages:[{role:'user',content:prompt}],
-        response_format:{type:'json_object'},
-        temperature:0.75
+        messages: [{role: 'user', content: prompt}],
+        response_format: {type: 'json_object'},
+        temperature: 0.6,
+        max_tokens: 2048
       })
     });
     
     if((res.status === 429 || res.status === 503) && cubaan < maxRetry) {
       const delay = cubaan * 5000;
-      console.log(`[${model.label}] Rate limit. Menunggu ${delay/1000}s...`);
+      console.log(`[${model.label}] Rate limit. Tunggu ${delay/1000}s...`);
       await new Promise(r => setTimeout(r, delay));
       return panggilModel(model, prompt, cubaan + 1);
     }
     
     const data = await res.json();
-    if(data.error) throw new Error(data.error.message);
-    return parseJSONSelamat(data.choices[0].message.content);
+    if(data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    
+    const teks = data.choices?.[0]?.message?.content;
+    if(!teks) throw new Error('Respons kosong dari OpenRouter');
+    
+    const finishReason = data.choices?.[0]?.finish_reason;
+    if(finishReason === 'length') {
+      throw new Error('Output terpotong (length)');
+    }
+    
+    return parseJSONSelamat(teks);
   }
+  
+  throw new Error(`Provider tidak dikenali: ${model.provider}`);
 }
 
+//==========================================================
+// FALLBACK ORCHESTRATOR (FUNGSI YANG HILANG SEBELUM INI!)
+//==========================================================
 async function panggilAIDenganFallback(prompt) {
   const errors = [];
+  const geminiKey = document.getElementById('geminiKey').value.trim();
+  const openrouterKey = document.getElementById('openrouterKey').value.trim();
+  
   for(let i=0; i<modelStatus.length; i++) {
     const m = modelStatus[i];
-    if(m.provider === 'gemini' && !document.getElementById('geminiKey').value.trim()) {
+    
+    // Skip jika tiada API key untuk provider tersebut
+    if(m.provider === 'gemini' && !geminiKey) {
       m.status = 'fail';
       paparModel();
       continue;
     }
-    if(m.provider === 'openai' && !document.getElementById('openaiKey').value.trim()) {
+    if(m.provider === 'openrouter' && !openrouterKey) {
       m.status = 'fail';
       paparModel();
       continue;
@@ -671,12 +612,12 @@ async function panggilAIDenganFallback(prompt) {
 }
 
 //==========================================================
-// PATCH v3.1: JANA SEMUA - dengan delay & teruskan loop
+// JANA SEMUA
 //==========================================================
 async function janaSemua() {
   if(sesiList.length === 0) { alert('Tiada sesi'); return; }
-  if(!document.getElementById('geminiKey').value.trim() && !document.getElementById('openaiKey').value.trim()) {
-    alert('Sila masukkan sekurang-kurangnya satu API Key');
+  if(!document.getElementById('geminiKey').value.trim() && !document.getElementById('openrouterKey').value.trim()) {
+    alert('Sila masukkan sekurang-kurangnya satu API Key (Gemini atau OpenRouter)');
     return;
   }
   simpanTetapan();
@@ -716,7 +657,7 @@ async function janaSemua() {
     }
     
     if(i < sesiList.length - 1 && delayBetween > 0) {
-      setStatus(`⏸️ Menunggu ${delayBetween/1000} saat sebelum sesi seterusnya...`, 'biru');
+      setStatus(`⏸️ Menunggu ${delayBetween/1000} saat...`, 'biru');
       await new Promise(r => setTimeout(r, delayBetween));
     }
   }
@@ -726,12 +667,12 @@ async function janaSemua() {
   
   if(sesiGagal.length === 0) {
     const berjaya = sesiList.length - bilSkip;
-    setStatus(`✅ Semua refleksi berjaya! (${berjaya} dijana baharu, ${bilSkip} dilangkau kerana sudah ada)`, 'hijau');
+    setStatus(`✅ Semua refleksi berjaya! (${berjaya} dijana baharu, ${bilSkip} dilangkau)`, 'hijau');
     const btnGagal = document.getElementById('btnJanaGagal');
     if(btnGagal) btnGagal.remove();
   } else {
     const senaraiGagal = sesiGagal.map(g => `• Sesi ${g.index} (${g.kelas} ${g.hari}): ${g.ralat}`).join('<br>');
-    setStatus(`⚠️ ${sesiList.length - sesiGagal.length}/${sesiList.length} berjaya. <b>${sesiGagal.length} gagal:</b><br>${senaraiGagal}<br><br><b>Klik butang oren di bawah untuk cuba semula sesi yang gagal sahaja.</b>`, 'merah');
+    setStatus(`⚠️ ${sesiList.length - sesiGagal.length}/${sesiList.length} berjaya. <b>${sesiGagal.length} gagal:</b><br>${senaraiGagal}<br><br><b>Klik butang oren untuk cuba semula.</b>`, 'merah');
     
     if(!document.getElementById('btnJanaGagal')) {
       const btn = document.createElement('button');
@@ -790,7 +731,7 @@ function setStatus(msg, warna) {
 }
 
 //==========================================================
-// PENJANA RPH FORMAT RASMI (1 muka surat)
+// PENJANA RPH RASMI
 //==========================================================
 function janaRPHRasmi(s) {
   const induksi = s.setInduksi.length ? s.setInduksi : [
@@ -810,7 +751,6 @@ function janaRPHRasmi(s) {
     'Kesimpulan tajuk dinyatakan oleh beberapa orang murid secara rawak'
   ];
 
-  // Format refleksi - setiap bahagian sebagai perenggan berasingan
   const refleksiKekuatan = s.refleksiKekuatan || '<i style="color:#999;">(belum dijana)</i>';
   const refleksiKelemahan = s.refleksiKelemahan || '<i style="color:#999;">(belum dijana)</i>';
   const refleksiTindakan = s.refleksiTindakan || '<i style="color:#999;">(belum dijana)</i>';
@@ -868,89 +808,9 @@ function janaSemuaRPH() {
   return sesiList.map(s => janaRPHRasmi(s)).join('');
 }
 
-//==========================================================
-// EKSPORT WORD
-//==========================================================
-function muatTurunDocx() {
-  const namaFail = `eRPH_${formatTarikhFail()}.doc`;
-  const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-<head><meta charset='utf-8'><title>eRPH</title>
-<xml>
-<w:WordDocument>
-<w:View>Print</w:View>
-<w:Zoom>100</w:Zoom>
-<w:DoNotOptimizeForBrowser/>
-</w:WordDocument>
-</xml>
-<style>
-@page { 
-  size: A4 portrait; 
-  margin: 0.8cm 1cm 0.8cm 1cm;
-  mso-page-orientation: portrait;
-}
-body { 
-  font-family: Arial, sans-serif; 
-  font-size: 9.5pt; 
-  line-height: 1.2;
-}
-table { 
-  width: 100%; 
-  border-collapse: collapse; 
-  page-break-inside: avoid !important;
-  mso-table-layout-alt: fixed;
-}
-tr { 
-  page-break-inside: avoid !important;
-}
-td { 
-  border: 1px solid #000; 
-  padding: 3px 5px; 
-  vertical-align: top;
-  page-break-inside: avoid !important;
-}
-.rph-header { 
-  background: #d1d5db; 
-  font-weight: bold; 
-  text-align: center; 
-}
-.rph-label { 
-  background: #f3f4f6; 
-  font-weight: bold; 
-}
-.rph-refleksi { 
-  font-size: 10pt; 
-}
-.rph-refleksi p { 
-  margin: 0 0 6pt 0; 
-  text-align: justify;
-  mso-margin-top-alt: auto;
-  mso-margin-bottom-alt: 6pt;
-}
-.rph-page { 
-  page-break-after: always;
-  page-break-inside: avoid;
-}
-.rph-page:last-child { 
-  page-break-after: auto; 
-}
-.page-break {
-  page-break-before: always;
-  mso-special-character: line-break;
-}
-</style>
-</head>
-<body>${janaSemuaRPHUntukDocx()}</body></html>`;
-  
-  const blob = new Blob(['\ufeff', html], {type:'application/msword'});
-  saveAs(blob, namaFail);
-  setStatus(`✅ "${namaFail}" dimuat turun (1 RPH = 1 muka surat)`, 'hijau');
-}
-
-// Fungsi khusus untuk DOCX - paksa page break antara setiap RPH
 function janaSemuaRPHUntukDocx() {
   return sesiList.map((s, idx) => {
     const html = janaRPHRasmi(s);
-    // Tambah page-break paksa selepas setiap RPH (kecuali yang terakhir)
     if(idx < sesiList.length - 1) {
       return html + '<br clear="all" style="mso-special-character:line-break;page-break-before:always;">';
     }
@@ -958,10 +818,35 @@ function janaSemuaRPHUntukDocx() {
   }).join('');
 }
 
+//==========================================================
+// EKSPORT
+//==========================================================
+function muatTurunDocx() {
+  const namaFail = `eRPH_${formatTarikhFail()}.doc`;
+  const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'><title>eRPH</title>
+<xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml>
+<style>
+@page { size: A4 portrait; margin: 0.8cm 1cm; }
+body { font-family: Arial, sans-serif; font-size: 9.5pt; line-height: 1.2; }
+table { width: 100%; border-collapse: collapse; page-break-inside: avoid !important; }
+tr { page-break-inside: avoid !important; }
+td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; page-break-inside: avoid !important; }
+.rph-header { background: #d1d5db; font-weight: bold; text-align: center; }
+.rph-label { background: #f3f4f6; font-weight: bold; }
+.rph-refleksi { font-size: 10pt; }
+.rph-refleksi p { margin: 0 0 6pt 0; text-align: justify; }
+.rph-page { page-break-after: always; page-break-inside: avoid; }
+.rph-page:last-child { page-break-after: auto; }
+</style>
+</head>
+<body>${janaSemuaRPHUntukDocx()}</body></html>`;
+  
+  const blob = new Blob(['\ufeff', html], {type:'application/msword'});
+  saveAs(blob, namaFail);
+  setStatus(`✅ "${namaFail}" dimuat turun`, 'hijau');
+}
 
-//==========================================================
-// EKSPORT PDF
-//==========================================================
 function muatTurunPDF() {
   const namaFail = `eRPH_${formatTarikhFail()}.pdf`;
   const wrapper = document.createElement('div');
@@ -1001,9 +886,6 @@ function formatTarikhFail() {
   return `${String(d.getDate()).padStart(2,'0')}${String(d.getMonth()+1).padStart(2,'0')}${d.getFullYear()}`;
 }
 
-//==========================================================
-// PRATONTON
-//==========================================================
 function togglePratonton() {
   const p = document.getElementById('pratonton');
   if(p.classList.contains('hidden')) {
@@ -1019,7 +901,7 @@ function togglePratonton() {
 //==========================================================
 muatTetapan();
 paparModel();
-['geminiKey','openaiKey','profil5I','profil5H','namaGuru','delayBetween','maxRetry'].forEach(id => {
+['geminiKey','openrouterKey','profil5I','profil5H','namaGuru','delayBetween','maxRetry'].forEach(id => {
   document.getElementById(id).addEventListener('change', simpanTetapan);
 });
 </script>
